@@ -17,21 +17,6 @@
 
 package org.apache.teaclave.javasdk.enclave;
 
-import org.apache.teaclave.javasdk.enclave.testservice.IntegerMath;
-import org.apache.teaclave.javasdk.enclave.testservice.MathService;
-import org.apache.teaclave.javasdk.enclave.testservice.NumericMath;
-import org.apache.teaclave.javasdk.enclave.testservice.Point;
-import org.apache.teaclave.javasdk.enclave.testservice.PointMath;
-import com.oracle.svm.core.annotate.AutomaticFeature;
-import org.graalvm.nativeimage.hosted.Feature;
-import org.graalvm.nativeimage.hosted.RuntimeSerialization;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.security.NoSuchAlgorithmException;
-
 import static org.apache.teaclave.javasdk.enclave.EnclaveTestHelper.EMPTY_OBJECT_ARRAY;
 import static org.apache.teaclave.javasdk.enclave.EnclaveTestHelper.EMPTY_STRING_ARRAY;
 import static org.apache.teaclave.javasdk.enclave.EnclaveTestHelper.INTEGER_MATH;
@@ -44,27 +29,47 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import com.oracle.svm.core.annotate.AutomaticFeature;
+import java.security.NoSuchAlgorithmException;
+import org.apache.teaclave.javasdk.enclave.testservice.IntegerMath;
+import org.apache.teaclave.javasdk.enclave.testservice.MathService;
+import org.apache.teaclave.javasdk.enclave.testservice.NumericMath;
+import org.apache.teaclave.javasdk.enclave.testservice.Point;
+import org.apache.teaclave.javasdk.enclave.testservice.PointMath;
+import org.graalvm.nativeimage.hosted.Feature;
+import org.graalvm.nativeimage.hosted.RuntimeSerialization;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 public class RunWithNativeImageTest {
 
     @TestTarget(RunWithNativeImageTest.class)
-    static
-    class SimpleRunPreparation extends NativeImageTest {
+    static class SimpleRunPreparation extends NativeImageTest {
 
         @Override
         public SVMCompileElements specifyTestClasses() {
             SVMCompileElements ret = new SVMCompileElements();
             // Specify the service file
-            ret.addServices("META-INF/services/org.apache.teaclave.javasdk.enclave.testservice.MathService");
+            ret.addServices(
+                "META-INF/services/org.apache.teaclave.javasdk.enclave.testservice.MathService"
+            );
 
             // Specify the classes need to be statically compiled into native image for this test
+            // Note: UTFeature is discovered automatically via @AutomaticFeature, don't add it here
             ret.addClasses(
-                    UTFeature.class, MathService.class, NumericMath.class, PointMath.class, Point.class, IntegerMath.class
+                MathService.class,
+                NumericMath.class,
+                PointMath.class,
+                Point.class,
+                IntegerMath.class
             );
             return ret;
         }
     }
 
-    static private NativeImageTest nativeImageTest;
+    private static NativeImageTest nativeImageTest;
 
     @BeforeAll
     public static void prepareLibraries() {
@@ -140,7 +145,13 @@ public class RunWithNativeImageTest {
     @Test
     public void testServiceDefaultMethod() {
         String identity = loadAndGetService(INTEGER_MATH);
-        int ret = (Integer) call(identity, INTEGER_MATH, "getConstant", EMPTY_STRING_ARRAY, EMPTY_OBJECT_ARRAY);
+        int ret = (Integer) call(
+            identity,
+            INTEGER_MATH,
+            "getConstant",
+            EMPTY_STRING_ARRAY,
+            EMPTY_OBJECT_ARRAY
+        );
         assertEquals(100, ret);
     }
 
@@ -150,8 +161,13 @@ public class RunWithNativeImageTest {
     @Test
     public void testPointAdd() {
         String id = loadAndGetService(POINT_MATH);
-        Point ret = (Point) call(id, POINT_MATH, "add", POINT_MATH_ADD_PARAM_TYPES,
-                new Object[]{new Point(1, 1), new Point(2, 2)});
+        Point ret = (Point) call(
+            id,
+            POINT_MATH,
+            "add",
+            POINT_MATH_ADD_PARAM_TYPES,
+            new Object[] { new Point(1, 1), new Point(2, 2) }
+        );
         assertEquals(3, ret.x);
         assertEquals(3, ret.y);
     }
@@ -164,7 +180,13 @@ public class RunWithNativeImageTest {
     public void testCallNativeGetRandomNumber() {
         String identity = loadAndGetService(NUMERIC_MATH);
         int size = 32;
-        byte[] ret = (byte[]) call(identity, NUMERIC_MATH, "getRandomNumber", new String[]{"int"}, new Object[]{size});
+        byte[] ret = (byte[]) call(
+            identity,
+            NUMERIC_MATH,
+            "getRandomNumber",
+            new String[] { "int" },
+            new Object[] { size }
+        );
         assertNotNull(ret);
         for (int i = 0; i < size; i++) {
             assertEquals(ret[i], i % 256);
@@ -172,19 +194,48 @@ public class RunWithNativeImageTest {
     }
 
     private static String loadAndGetService(String implementation) {
-        return EnclaveTestHelper.loadAndGetService(MATH_SERVICE, implementation, 3);
+        return EnclaveTestHelper.loadAndGetService(
+            MATH_SERVICE,
+            implementation,
+            3
+        );
     }
 
     private static int callIntAdd(String id, int x, int y) {
-        return (Integer) call(id, NUMERIC_MATH, "add", MATH_ADD_PARAM_TYPES, new Object[]{x, y});
+        return (Integer) call(
+            id,
+            NUMERIC_MATH,
+            "add",
+            MATH_ADD_PARAM_TYPES,
+            new Object[] { x, y }
+        );
     }
 
     private static int callGetCounter(String id) {
-        return (Integer) call(id, NUMERIC_MATH, "getCounter", EMPTY_STRING_ARRAY, EMPTY_OBJECT_ARRAY);
+        return (Integer) call(
+            id,
+            NUMERIC_MATH,
+            "getCounter",
+            EMPTY_STRING_ARRAY,
+            EMPTY_OBJECT_ARRAY
+        );
     }
 
-    private static Object call(String id, String className, String methodName, String[] paramTypes, Object[] paramValues) {
-        return EnclaveTestHelper.call(id, MATH_SERVICE, className, methodName, paramTypes, paramValues);
+    private static Object call(
+        String id,
+        String className,
+        String methodName,
+        String[] paramTypes,
+        Object[] paramValues
+    ) {
+        return EnclaveTestHelper.call(
+            id,
+            MATH_SERVICE,
+            className,
+            methodName,
+            paramTypes,
+            paramValues
+        );
     }
 
     @AutomaticFeature
@@ -192,7 +243,10 @@ public class RunWithNativeImageTest {
 
         @Override
         public void beforeAnalysis(BeforeAnalysisAccess access) {
-            RuntimeSerialization.register(Number.class, NoSuchAlgorithmException.class);
+            RuntimeSerialization.register(
+                Number.class,
+                NoSuchAlgorithmException.class
+            );
         }
     }
 }
