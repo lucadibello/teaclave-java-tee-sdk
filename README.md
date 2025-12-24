@@ -264,6 +264,34 @@ A full-featured development environment with additional tools for interactive de
    - `/dev/sgx_provision`
    - `/dev/sgx_vepc`
 
+**Using with go-task (recommended):**
+
+A `taskfile.yml` is provided for convenient devcontainer management. 
+
+Requirements:
+- [go-task](https://taskfile.dev/)
+- [devcontainer-cli](https://github.com/devcontainers/cli) (requires Node.js): `npm install -g @devcontainers/cli`
+
+Usage:
+
+```bash
+# Build, start, and attach to the devcontainer (all-in-one)
+task devcontainer
+
+# Or run individual steps:
+task devcontainer-build    # Build the devcontainer image
+task devcontainer-up       # Start the devcontainer
+task devcontainer-attach   # Attach to the running devcontainer
+
+# Other useful tasks:
+task devcontainer-down     # Stop and remove the devcontainer
+task devcontainer-recreate # Recreate from scratch (clean environment)
+
+# SSH/Neovim tunneling (for remote development):
+task tunnel-ssh            # Forward SSH port locally
+task tunnel-nvim           # Forward Neovim headless server port
+```
+
 **Using with VS Code DevContainers:**
 
 1. Install the "Dev Containers" extension in VS Code
