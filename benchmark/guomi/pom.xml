@@ -22,7 +22,7 @@
     <url>http://maven.apache.org</url>
     <properties>
         <jmh.version>1.35</jmh.version>
-        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <org.apache.teaclave.javasdk.platform>MOCK_IN_SVM:TEE_SDK</org.apache.teaclave.javasdk.platform>

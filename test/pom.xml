@@ -22,8 +22,8 @@
     <name>test</name>
     <url></url>
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <graal.version>22.2.0</graal.version>
         <surefire.version>3.0.0-M5</surefire.version>
@@ -121,8 +121,8 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.8.1</version>
                     <configuration>
-                        <source>11</source>
-                        <target>11</target>
+                        <source>17</source>
+                        <target>17</target>
                     </configuration>
                 </plugin>
                 <plugin>

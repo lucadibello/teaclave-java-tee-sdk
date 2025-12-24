@@ -47,7 +47,6 @@
                                         <buildArg>--shared</buildArg>
                                         <buildArg>--no-fallback</buildArg>
                                         <buildArg>-H:+RunInEnclave</buildArg>
-                                        <buildArg>-H:OutputRelocatableImage=.</buildArg>
                                         <buildArg>-H:Path=svm-output</buildArg>
                                     </buildArgs>
                                 </configuration>
@@ -185,7 +184,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.3</version>
+                <version>0.8.11</version>
                 <configuration>
                     <includes>
                         <include>org/apache/teaclave/javasdk/enclave/**/*</include>

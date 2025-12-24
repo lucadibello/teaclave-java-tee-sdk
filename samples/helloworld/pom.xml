@@ -21,8 +21,8 @@
     <name>helloworld</name>
     <url>http://maven.apache.org</url>
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <org.apache.teaclave.javasdk.platform>MOCK_IN_SVM:TEE_SDK</org.apache.teaclave.javasdk.platform>
     </properties>
