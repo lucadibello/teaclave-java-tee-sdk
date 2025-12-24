@@ -217,5 +217,52 @@ will be compiled into a native image, and the host submodule run in a JVM enviro
 
 please refer to the link: [Configuration.md](./sdk/host/docs/Configuration.md)
 
+## Docker Images
+
+Teaclave Java TEE SDK provides two Docker images for different use cases:
+
+### Builder Image (Recommended for CI/CD)
+
+A minimal image containing only the essential build tools. Use this for building projects in CI/CD pipelines or for one-off builds.
+
+**Build the image:**
+
+```bash
+docker build -f Dockerfile.builder -t teaclave-java-tee-sdk-builder .
+```
+
+**Use it to build your project:**
+
+```bash
+docker run --rm -v $(pwd)/your-project:/workspace teaclave-java-tee-sdk-builder \
+    mvn -Pnative clean package -DskipTests
+```
+
+> **Note:** The `-DskipTests` flag is recommended for CI builds. Native tests require a fully configured SGX environment to run.
+
+**What's included:**
+- GraalVM 22.2.0 with native-image
+- Maven 3.9.12
+- Intel SGX SDK 2.26
+- musl toolchain for static linking
+- Pre-built TeaClave Java TEE SDK
+
+### DevContainer Image (Recommended for Development)
+
+A full-featured development environment with additional tools for interactive development.
+
+**Build the image:**
+
+```bash
+docker build -f .devcontainer/Dockerfile -t teaclave-java-tee-sdk-dev .
+```
+
+**What's included (in addition to builder):**
+- SSH server for remote development
+- Neovim with headless server mode
+- Node.js, ripgrep, fd-find
+- Oh My Zsh with zsh shell
+- Non-root user setup
+
 ## Publications
 - *Xinyuan miao, Ziyi Lin, Shaojun Wang, Yu Lei, Sanhong Li, Zihan Wang, Pengbo Nie, Yuting Chen, Beijun Shen, He Jiang*. Lejacon: A Lightweight and Efficient Approach to Java Confidential Computing on SGX. ICSE 2023 (to appear).

@@ -1,0 +1,33 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.iml
+
+# Build outputs
+**/target
+**/*.class
+**/*.jar
+**/*.so
+**/*.o
+
+# DevContainer (not needed for builder image)
+.devcontainer
+
+# Documentation
+*.md
+!sdk/**/docs/*.md
+
+# Test artifacts
+**/test
+**/tests
+**/benchmark
+**/samples
+**/coverage
+
+# Local environment
+.env
+*.log
