@@ -18,3 +18,7 @@ hs_err_pid*
 
 # Maven compiled directory
 target/
+
+# Environment files (may contain secrets)
+.env
+!.env.example

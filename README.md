@@ -251,18 +251,37 @@ docker run --rm -v $(pwd)/your-project:/workspace teaclave-java-tee-sdk-builder 
 
 A full-featured development environment with additional tools for interactive development.
 
-**Build the image:**
+**Prerequisites:**
+
+1. Create a `.env` file in the project root (required by the devcontainer):
+   ```bash
+   cp .env.example .env
+   # Edit .env to add any custom environment variables
+   ```
+
+2. Ensure SGX devices are available (for hardware modes):
+   - `/dev/sgx_enclave`
+   - `/dev/sgx_provision`
+   - `/dev/sgx_vepc`
+
+**Using with VS Code DevContainers:**
+
+1. Install the "Dev Containers" extension in VS Code
+2. Open the project folder
+3. Click "Reopen in Container" when prompted (or use Command Palette: "Dev Containers: Reopen in Container")
+
+**Manual build:**
 
 ```bash
 docker build -f .devcontainer/Dockerfile -t teaclave-java-tee-sdk-dev .
 ```
 
 **What's included (in addition to builder):**
-- SSH server for remote development
-- Neovim with headless server mode
+- SSH server for remote development (port 2222)
+- Neovim with headless server mode (port 6666)
 - Node.js, ripgrep, fd-find
 - Oh My Zsh with zsh shell
-- Non-root user setup
+- Non-root user setup (`dev` user with sudo access)
 
 ## Publications
 - *Xinyuan miao, Ziyi Lin, Shaojun Wang, Yu Lei, Sanhong Li, Zihan Wang, Pengbo Nie, Yuting Chen, Beijun Shen, He Jiang*. Lejacon: A Lightweight and Efficient Approach to Java Confidential Computing on SGX. ICSE 2023 (to appear).
