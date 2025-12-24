@@ -15,11 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <sgx_trts.h>
+
+/* Forward declaration for SGX environment (can't use stdio.h with -nostdinc) */
+int printf(const char *format, ...);
 
 #include <graal_isolate.h>
 #include <enc_environment.h>

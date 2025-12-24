@@ -17,6 +17,8 @@
 
 package org.apache.teaclave.javasdk.enclave;
 
+import static org.apache.teaclave.javasdk.enclave.NativeCommandUtil.GRAALVM_HOME;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,25 +31,32 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static org.apache.teaclave.javasdk.enclave.NativeCommandUtil.GRAALVM_HOME;
-
 public abstract class NativeImageTest implements NativeImageTestable {
+
     private static final String JNI_LIB_NAME = "encinvokeentrytest";
     public static final Path MVN_BUILD_DIR = Paths.get("target");
     private static final String SVM_OUT = "svm-out";
     private static final String SVM_ENCLAVE_LIB = "svm_enclave_sdk";
 
     private static final boolean useStaticLink = true;
-    public static final String ENC_INVOKE_ENTRY_TEST_C = "enc_invoke_entry_test.c";
+    public static final String ENC_INVOKE_ENTRY_TEST_C =
+        "enc_invoke_entry_test.c";
 
     static {
         if (!GRAALVM_HOME.toFile().exists()) {
-            throw new RuntimeException("System environment variable GRAALVM_HOME is set to " + GRAALVM_HOME
-                    + ", but the directory does not exist!");
+            throw new RuntimeException(
+                "System environment variable GRAALVM_HOME is set to " +
+                    GRAALVM_HOME +
+                    ", but the directory does not exist!"
+            );
         }
         if (!MVN_BUILD_DIR.toFile().exists()) {
-            throw new RuntimeException("Maven default build directory " + MVN_BUILD_DIR.toAbsolutePath() + " doesn't exist." +
-                    " Please check your maven's ${project.build.directory} property and make sure it's \"target\".");
+            throw new RuntimeException(
+                "Maven default build directory " +
+                    MVN_BUILD_DIR.toAbsolutePath() +
+                    " doesn't exist." +
+                    " Please check your maven's ${project.build.directory} property and make sure it's \"target\"."
+            );
         }
     }
 
@@ -62,6 +71,7 @@ public abstract class NativeImageTest implements NativeImageTestable {
     protected Path svmCompileClassesDir;
 
     static class SVMCompileElements {
+
         private final List<String> serviceConfigs = new ArrayList<>();
         private final List<String> svmConfigs = new ArrayList<>();
         private final List<String> otherResources = new ArrayList<>();
@@ -87,8 +97,12 @@ public abstract class NativeImageTest implements NativeImageTestable {
     public NativeImageTest() {
         TestTarget targetTest = this.getClass().getAnnotation(TestTarget.class);
         if (targetTest == null) {
-            throw new RuntimeException("The subclasses of NativeImageTest must use @TestTarget specify the test target class."
-                    + " But class " + this.getClass().getName() + " doesn't have one.");
+            throw new RuntimeException(
+                "The subclasses of NativeImageTest must use @TestTarget specify the test target class." +
+                    " But class " +
+                    this.getClass().getName() +
+                    " doesn't have one."
+            );
         }
         String targetTestClassName = targetTest.value().getName();
         int lastDot = targetTestClassName.lastIndexOf('.');
@@ -107,7 +121,12 @@ public abstract class NativeImageTest implements NativeImageTestable {
         dirsToCreate.add(configPathDir);
         dirsToCreate.add(serviceDir);
         dirsToCreate.add(svmCompileClassesDir);
-        dirsToCreate.forEach(p -> createDirs(p, "Can't create directory " + p + " at test preparation time"));
+        dirsToCreate.forEach(p ->
+            createDirs(
+                p,
+                "Can't create directory " + p + " at test preparation time"
+            )
+        );
         testClassesDir = MVN_BUILD_DIR.resolve("test-classes");
     }
 
@@ -118,42 +137,76 @@ public abstract class NativeImageTest implements NativeImageTestable {
         svmCompile();
         afterSVMCompile();
         compileJNILibrary();
-        System.load(workingDir.resolve("lib" + JNI_LIB_NAME + ".so").toAbsolutePath().toString());
+        System.load(
+            workingDir
+                .resolve("lib" + JNI_LIB_NAME + ".so")
+                .toAbsolutePath()
+                .toString()
+        );
     }
 
     private void collectSVMCompileItems() {
         SVMCompileElements items = specifyTestClasses();
         if (items == null) {
-            throw new RuntimeException("Must specify the elements to be compiled by native-image for testing.");
+            throw new RuntimeException(
+                "Must specify the elements to be compiled by native-image for testing."
+            );
         }
 
         if (!items.svmConfigs.isEmpty()) {
-            items.svmConfigs.stream().map(s -> testClassesDir.resolve(s).toAbsolutePath()).
-                    forEach(p -> copyFile(p, configPathDir.resolve(p.getFileName()), "Fail to copy configuration file."));
+            items.svmConfigs
+                .stream()
+                .map(s -> testClassesDir.resolve(s).toAbsolutePath())
+                .forEach(p ->
+                    copyFile(
+                        p,
+                        configPathDir.resolve(p.getFileName()),
+                        "Fail to copy configuration file."
+                    )
+                );
         }
 
         if (items.classes.isEmpty()) {
-            throw new RuntimeException("Must specify the classes to be compiled by native-image for testing.");
+            throw new RuntimeException(
+                "Must specify the classes to be compiled by native-image for testing."
+            );
         } else {
-            items.classes.forEach(c ->
-            {
+            items.classes.forEach(c -> {
                 String classLocation = getClassFileName(c);
                 Path destPath = svmCompileClassesDir.resolve(classLocation);
-                createDirs(destPath.getParent(), "Can't create class directories for native-image compilation.");
-                copyFile(testClassesDir.resolve(classLocation).toAbsolutePath(), destPath, "Can't copy class file.");
+                createDirs(
+                    destPath.getParent(),
+                    "Can't create class directories for native-image compilation."
+                );
+                copyFile(
+                    testClassesDir.resolve(classLocation).toAbsolutePath(),
+                    destPath,
+                    "Can't copy class file."
+                );
             });
         }
 
         if (!items.serviceConfigs.isEmpty()) {
-            items.serviceConfigs.stream().map(s -> testClassesDir.resolve(s).toAbsolutePath()).
-                    forEach(p -> copyFile(p, serviceDir.resolve(p.getFileName()), null));
+            items.serviceConfigs
+                .stream()
+                .map(s -> testClassesDir.resolve(s).toAbsolutePath())
+                .forEach(p ->
+                    copyFile(p, serviceDir.resolve(p.getFileName()), null)
+                );
         }
 
         if (!items.otherResources.isEmpty()) {
             items.otherResources.forEach(s -> {
                 Path destPath = svmCompileClassesDir.resolve(s);
-                createDirs(destPath.getParent(), "Can't create resource directories for native-image compilation.");
-                copyFile(testClassesDir.resolve(s).toAbsolutePath(), destPath, "Can't copy resource file.");
+                createDirs(
+                    destPath.getParent(),
+                    "Can't create resource directories for native-image compilation."
+                );
+                copyFile(
+                    testClassesDir.resolve(s).toAbsolutePath(),
+                    destPath,
+                    "Can't copy resource file."
+                );
             });
         }
     }
@@ -165,17 +218,28 @@ public abstract class NativeImageTest implements NativeImageTestable {
         command.add(0, GRAALVM_HOME.resolve("bin/native-image").toString());
         command.add("-cp");
         StringBuilder sb = new StringBuilder();
-        List<Path> svmBinFiles = Arrays.asList(svmCompileClassesDir,
-                configRootDir,
-                svmEncSDKClassDir,
-                MVN_BUILD_DIR.toAbsolutePath().getParent().getParent().resolve("common/target/classes")
+        List<Path> svmBinFiles = Arrays.asList(
+            svmCompileClassesDir,
+            configRootDir,
+            svmEncSDKClassDir,
+            MVN_BUILD_DIR.toAbsolutePath()
+                .getParent()
+                .getParent()
+                .resolve("common/target/classes")
         );
-        svmBinFiles.stream().map(p -> p.normalize().toAbsolutePath()).forEach(p -> {
-            if (Files.notExists(p)) {
-                throw new RuntimeException("File " + p + " on native-image class file doesn't exist.");
-            }
-            sb.append(p.toString()).append(File.pathSeparator);
-        });
+        svmBinFiles
+            .stream()
+            .map(p -> p.normalize().toAbsolutePath())
+            .forEach(p -> {
+                if (Files.notExists(p)) {
+                    throw new RuntimeException(
+                        "File " +
+                            p +
+                            " on native-image class file doesn't exist."
+                    );
+                }
+                sb.append(p.toString()).append(File.pathSeparator);
+            });
         command.add(sb.deleteCharAt(sb.length() - 1).toString());
         command.add("--shared");
         if (useStaticLink) {
@@ -197,17 +261,31 @@ public abstract class NativeImageTest implements NativeImageTestable {
     private void compileJNILibrary() {
         System.out.println("###Prepare JNI library ...###");
         List<Path> requiredFilePaths = new ArrayList<>();
-        requiredFilePaths.add(testClassesDir.resolve("native/org_apache_teaclave_javasdk_enclave_EnclaveTestHelper.h"));
-        requiredFilePaths.add(testClassesDir.resolve("native/" + ENC_INVOKE_ENTRY_TEST_C));
-        requiredFilePaths.add(svmOutputDir.resolve("lib" + SVM_ENCLAVE_LIB + ".h"));
+        requiredFilePaths.add(
+            testClassesDir.resolve(
+                "native/org_apache_teaclave_javasdk_enclave_EnclaveTestHelper.h"
+            )
+        );
+        requiredFilePaths.add(
+            testClassesDir.resolve("native/" + ENC_INVOKE_ENTRY_TEST_C)
+        );
+        requiredFilePaths.add(
+            svmOutputDir.resolve("lib" + SVM_ENCLAVE_LIB + ".h")
+        );
         requiredFilePaths.add(svmOutputDir.resolve("graal_isolate.h"));
         requiredFilePaths.add(svmOutputDir.resolve("enc_environment.h"));
         if (useStaticLink) {
-            requiredFilePaths.add(svmOutputDir.resolve("lib" + SVM_ENCLAVE_LIB + ".o"));
+            requiredFilePaths.add(
+                svmOutputDir.resolve("lib" + SVM_ENCLAVE_LIB + ".o")
+            );
         } else {
-            requiredFilePaths.add(svmOutputDir.resolve("lib" + SVM_ENCLAVE_LIB + ".so"));
+            requiredFilePaths.add(
+                svmOutputDir.resolve("lib" + SVM_ENCLAVE_LIB + ".so")
+            );
         }
-        requiredFilePaths.forEach(p -> copyFile(p, workingDir.resolve(p.getFileName()), null));
+        requiredFilePaths.forEach(p ->
+            copyFile(p, workingDir.resolve(p.getFileName()), null)
+        );
 
         List<String> command = new ArrayList<>();
         if (useStaticLink) {
@@ -219,7 +297,7 @@ public abstract class NativeImageTest implements NativeImageTestable {
         NativeCommandUtil.executeNewProcess(command, workingDir);
     }
 
-    protected Collection<String> addMacros(){
+    protected Collection<String> addMacros() {
         return Collections.EMPTY_LIST;
     }
 
@@ -235,13 +313,43 @@ public abstract class NativeImageTest implements NativeImageTestable {
         command.add("lib" + SVM_ENCLAVE_LIB + ".o");
         command.add("-I.");
         command.add("-L.");
-        command.add(graalvmHome.resolve("lib/svm/clibraries/linux-amd64/liblibchelper.a").toString());
-        command.add(graalvmHome.resolve("lib/svm/clibraries/linux-amd64/libjvm.a").toString());
-        command.add(graalvmHome.resolve("lib/static/linux-amd64/musl/libnio.a").toString());
-        command.add(graalvmHome.resolve("lib/static/linux-amd64/musl/libzip.a").toString());
-        command.add(graalvmHome.resolve("lib/static/linux-amd64/musl/libnet.a").toString());
-        command.add(graalvmHome.resolve("lib/static/linux-amd64/musl/libjava.a").toString());
-        command.add(graalvmHome.resolve("lib/static/linux-amd64/musl/libfdlibm.a").toString());
+        command.add(
+            graalvmHome
+                .resolve("lib/svm/clibraries/linux-amd64/liblibchelper.a")
+                .toString()
+        );
+        // Libraries that depend on libjvm.a symbols must come before libjvm.a
+        command.add(
+            graalvmHome
+                .resolve("lib/static/linux-amd64/musl/libnio.a")
+                .toString()
+        );
+        command.add(
+            graalvmHome
+                .resolve("lib/static/linux-amd64/musl/libzip.a")
+                .toString()
+        );
+        command.add(
+            graalvmHome
+                .resolve("lib/static/linux-amd64/musl/libnet.a")
+                .toString()
+        );
+        command.add(
+            graalvmHome
+                .resolve("lib/static/linux-amd64/musl/libjava.a")
+                .toString()
+        );
+        command.add(
+            graalvmHome
+                .resolve("lib/static/linux-amd64/musl/libfdlibm.a")
+                .toString()
+        );
+        // libjvm.a must come after libraries that reference its symbols
+        command.add(
+            graalvmHome
+                .resolve("lib/svm/clibraries/linux-amd64/libjvm.a")
+                .toString()
+        );
         command.add("-std=c99");
         command.add("-lc");
         command.add("-shared");
@@ -264,7 +372,6 @@ public abstract class NativeImageTest implements NativeImageTestable {
         command.add("-o");
         command.add("lib" + JNI_LIB_NAME + ".so");
     }
-
 
     public static void copyFile(Path source, Path dest, String errMSg) {
         try {

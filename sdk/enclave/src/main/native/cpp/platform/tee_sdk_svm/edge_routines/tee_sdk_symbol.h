@@ -19,8 +19,11 @@
 #define _TEE_SDK_SYMBOL_H
 
 #include <stdint.h>
-#include <stdio.h>
 #include <assert.h>
+
+/* Forward declarations for SGX environment (can't use stdio.h with -nostdinc) */
+typedef struct _IO_FILE FILE;
+int printf(const char *format, ...);
 
 extern int enable_trace_symbol_calling;
 

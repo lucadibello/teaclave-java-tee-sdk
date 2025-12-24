@@ -21,7 +21,6 @@ enclave {
 
     from "sgx_tstdc.edl"              import *;
     from "sgx_pthread.edl"            import *;
-    from "sgx_stdc_ex.edl"            import *;
 
     trusted {
         // create a graal isolate;
