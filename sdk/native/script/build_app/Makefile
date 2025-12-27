@@ -30,7 +30,7 @@ ${XATTR_STUB_OBJ}: ${XATTR_STUB_SRC}
 
 all: build
 
-build:
+build: ${XATTR_STUB_OBJ}
 ifeq ($(TEE_SDK), TRUE)
     # remove lib_tee_sdk_svm_load.so from target/svm-output, because it's
     # compiled target to common execution environment.
