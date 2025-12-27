@@ -80,7 +80,7 @@ TS_ENCLAVE_CFLAGS = $(TS_ENCLAVE_INCDIR) -nostdinc -fvisibility=hidden -fpie -ff
 TS_ENCLAVE_CXXFLAGS = $(TS_ENCLAVE_CFLAGS) -nostdinc++
 TS_ENCLAVE_LDFLAGS = -L$(SGX_LIBRARY_PATH) $(TS_ENCLAVE_CFLAGS) -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles $(Enclave_Security_Link_Flags) \
 				-Wl,--whole-archive -l$(Trts_Library_Name) -Wl,--no-whole-archive \
-				-Wl,--start-group -lsgx_tstdc -lsgx_tstdc_ex -lsgx_tcxx -lsgx_pthread -lsgx_tcrypto -l$(Service_Library_Name)  -Wl,--end-group \
-				-Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
+				-Wl,--start-group -lsgx_tstdc -lsgx_tcxx -lsgx_pthread -lsgx_tcrypto -l$(Service_Library_Name)  -Wl,--end-group \
+				-Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined -Wl,--allow-multiple-definition \
 				-Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \
 				-Wl,--defsym,__ImageBase=0

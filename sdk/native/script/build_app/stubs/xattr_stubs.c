@@ -19,7 +19,6 @@
 #include <grp.h>
 #include <poll.h>
 #include <sys/uio.h>
-#include <signal.h>
 #include <dirent.h>
 #include <stdarg.h>
 #include <sys/select.h>
@@ -37,18 +36,21 @@ ssize_t flistxattr(int fd, char *list, size_t size) { errno = ENOTSUP; return -1
 // Note: We initialize these to NULL. Any access will crash, but in enclave they shouldn't be used directly
 // without checking, or the code using them (JDK) checks.
 FILE *stderr = NULL;
-FILE *stdin = NULL;
-FILE *stdout = NULL;
+// FILE *stdin = NULL;
+// FILE *stdout = NULL;
 
 int printf(const char *format, ...) { return 0; }
 int fprintf(FILE *stream, const char *format, ...) { return 0; }
-int sprintf(char *str, const char *format, ...) { return 0; } // Actual sprintf might be needed? Safe to return 0 for now.
+
+// Actual sprintf might be needed? Safe to return 0 for now.
+int sprintf(char *str, const char *format, ...) { return 0; }
+
 int vfprintf(FILE *stream, const char *format, va_list ap) { return 0; }
 int fflush(FILE *stream) { return 0; }
 size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream) { return 0; }
-size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream) { return 0; }
-int fputs(const char *s, FILE *stream) { return 0; }
-int fputc(int c, FILE *stream) { return c; }
+// size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream) { return 0; }
+// int fputs(const char *s, FILE *stream) { return 0; }
+// int fputc(int c, FILE *stream) { return c; }
 char *fgets(char *s, int size, FILE *stream) { return NULL; }
 FILE *fopen(const char *pathname, const char *mode) { errno = ENOENT; return NULL; }
 FILE *fdopen(int fd, const char *mode) { errno = ENOENT; return NULL; }
@@ -64,14 +66,14 @@ ssize_t write(int fd, const void *buf, size_t count) { return count; }
 off_t lseek(int fd, off_t offset, int whence) { errno = ESPIPE; return -1; }
 off64_t lseek64(int fd, off64_t offset, int whence) { errno = ESPIPE; return -1; }
 int fcntl(int fd, int cmd, ...) { errno = ENOSYS; return -1; }
-int ioctl(int fd, unsigned long request, ...) { errno = ENOSYS; return -1; }
+// int ioctl(int fd, unsigned long request, ...) { errno = ENOSYS; return -1; }
 int fsync(int fd) { return 0; }
 int fdatasync(int fd) { return 0; }
-int ftruncate(int fd, off_t length) { errno = ENOSYS; return -1; }
+// int ftruncate(int fd, off_t length) { errno = ENOSYS; return -1; }
 int ftruncate64(int fd, off64_t length) { errno = ENOSYS; return -1; }
-int stat(const char *pathname, struct stat *statbuf) { errno = ENOENT; return -1; }
-int fstat(int fd, struct stat *statbuf) { errno = EBADF; return -1; }
-int lstat(const char *pathname, struct stat *statbuf) { errno = ENOENT; return -1; }
+// int stat(const char *pathname, struct stat *statbuf) { errno = ENOENT; return -1; }
+// int fstat(int fd, struct stat *statbuf) { errno = EBADF; return -1; }
+// int lstat(const char *pathname, struct stat *statbuf) { errno = ENOENT; return -1; }
 int access(const char *pathname, int mode) { errno = ENOENT; return -1; }
 int unlink(const char *pathname) { errno = ENOENT; return -1; }
 int rename(const char *oldpath, const char *newpath) { errno = ENOENT; return -1; }
@@ -91,7 +93,7 @@ long pathconf(const char *path, int name) { errno = EINVAL; return -1; }
 DIR *opendir(const char *name) { errno = ENOENT; return NULL; }
 struct dirent *readdir(DIR *dirp) { return NULL; }
 int closedir(DIR *dirp) { return 0; }
-void rewinddir(DIR *dirp) { }
+// void rewinddir(DIR *dirp) { }
 
 // Network
 int socket(int domain, int type, int protocol) { errno = EAFNOSUPPORT; return -1; }
@@ -129,18 +131,18 @@ int gettimeofday(struct timeval *tv, void *tz) { return -1; }
 int clock_gettime(clockid_t clk_id, struct timespec *tp) { return -1; }
 long sysconf(int name) { return -1; }
 void exit(int status) { while(1); }
-void abort(void) { while(1); }
-int kill(pid_t pid, int sig) { errno = EPERM; return -1; }
-pid_t wait(int *wstatus) { errno = ECHILD; return -1; }
+// void abort(void) { while(1); }
+// int kill(pid_t pid, int sig) { errno = EPERM; return -1; }
+// pid_t wait(int *wstatus) { errno = ECHILD; return -1; }
 int dup(int oldfd) { errno = EBADF; return -1; }
 int dup2(int oldfd, int newfd) { errno = EBADF; return -1; }
-int pipe(int pipefd[2]) { errno = EMFILE; return -1; }
+// int pipe(int pipefd[2]) { errno = EMFILE; return -1; }
 int poll(struct pollfd *fds, nfds_t nfds, int timeout) { errno = ENOSYS; return -1; }
-int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout) { errno = ENOSYS; return -1; }
+// int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout) { errno = ENOSYS; return -1; }
 
-void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) { errno = ENOMEM; return MAP_FAILED; }
+// void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) { errno = ENOMEM; return MAP_FAILED; }
 void *mmap64(void *addr, size_t length, int prot, int flags, int fd, off64_t offset) { errno = ENOMEM; return MAP_FAILED; }
-int munmap(void *addr, size_t length) { return 0; }
+// int munmap(void *addr, size_t length) { return 0; }
 int nanosleep(const struct timespec *req, struct timespec *rem) { return 0; }
 int sched_yield(void) { return 0; }
 
@@ -149,18 +151,18 @@ struct passwd *getpwuid(uid_t uid) { return NULL; }
 int getpwuid_r(uid_t uid, struct passwd *pwd, char *buf, size_t buflen, struct passwd **result) { return -1; }
 struct group *getgrgid(gid_t gid) { return NULL; }
 int getgrgid_r(gid_t gid, struct group *grp, char *buf, size_t buflen, struct group **result) { return -1; }
-int getpwnam_r(const char *name, struct passwd *pwd, char *buf, size_t buflen, struct passwd **result) { return -1; }
-int getgrnam_r(const char *name, struct group *grp, char *buf, size_t buflen, struct group **result) { return -1; }
+// int getpwnam_r(const char *name, struct passwd *pwd, char *buf, size_t buflen, struct passwd **result) { return -1; }
+// int getgrnam_r(const char *name, struct group *grp, char *buf, size_t buflen, struct group **result) { return -1; }
 
 // DL
-void *dlopen(const char *filename, int flags) { return NULL; }
-void *dlsym(void *handle, const char *symbol) { return NULL; }
-int dlclose(void *handle) { return 0; }
-char *dlerror(void) { return "Not supported"; }
+// void *dlopen(const char *filename, int flags) { return NULL; }
+// void *dlsym(void *handle, const char *symbol) { return NULL; }
+// int dlclose(void *handle) { return 0; }
+// char *dlerror(void) { return "Not supported"; }
 
 // Signal
-typedef void (*sighandler_t)(int);
-sighandler_t signal(int signum, sighandler_t handler) { return SIG_ERR; }
+// typedef void (*sighandler_t)(int);
+// sighandler_t signal(int signum, sighandler_t handler) { return SIG_ERR; }
 
 // Env
 char *getenv(const char *name) { return NULL; }

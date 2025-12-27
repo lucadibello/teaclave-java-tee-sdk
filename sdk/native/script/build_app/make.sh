@@ -17,10 +17,37 @@
 # specific language governing permissions and limitations
 # under the License.
 
+set -e
+
 # shellcheck disable=SC2006
 export BUILD_SCRIPT_DIR=`dirname "$0"`
-# set enclave project's base dir path.
-export ENCLAVE_BASE_DIR="$1"
+
+# Validate required arguments
+if [ -z "$1" ]; then
+    echo "Error: ENCLAVE_BASE_DIR is required."
+    echo "Usage: $0 <ENCLAVE_BASE_DIR> <ENCLAVE_PLATFORM> [ENCLAVE_PRIVATE_PEM_PATH]"
+    echo ""
+    echo "Arguments:"
+    echo "  ENCLAVE_BASE_DIR         Path to the enclave project's base directory"
+    echo "  ENCLAVE_PLATFORM         Platform type: TEE_SDK or EMBEDDED_LIB_OS (can be colon-separated for multiple)"
+    echo "  ENCLAVE_PRIVATE_PEM_PATH (Optional) Path to private PEM file for signing"
+    echo ""
+    echo "Example:"
+    echo "  $0 /path/to/enclave TEE_SDK"
+    echo "  $0 /path/to/enclave TEE_SDK:EMBEDDED_LIB_OS /path/to/private.pem"
+    exit 1
+fi
+
+if [ -z "$2" ]; then
+    echo "Error: ENCLAVE_PLATFORM is required."
+    echo "Usage: $0 <ENCLAVE_BASE_DIR> <ENCLAVE_PLATFORM> [ENCLAVE_PRIVATE_PEM_PATH]"
+    echo ""
+    echo "Supported platforms: TEE_SDK, EMBEDDED_LIB_OS"
+    exit 1
+fi
+
+# set enclave project's base dir path (convert to absolute path).
+export ENCLAVE_BASE_DIR="$(cd "$1" && pwd)"
 # set enclave platform, such as mock_in_svm and tee_sdk.
 enclave_platform_config=$2
 # get enclave private pem for making .signed file.
@@ -50,4 +77,4 @@ do
   export "$enclave_platform"=TRUE
 done
 
-make -f ./Makefile
+make -f ./Makefile all
