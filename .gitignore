@@ -1,5 +1,16 @@
 # Compiled class file
 *.class
+*.o
+*.so
+
+# Generated trusted/untrusted classes/headers
+*_u.c
+*_u.h
+
+# Language Server Protocol files
+*.lsp
+*.factorypath
+*.settings
 
 # Log file
 *.log
