@@ -71,7 +71,7 @@ SGX_COMMON_CXXFLAGS := $(SGX_COMMON_FLAGS) -Wnon-virtual-dtor -std=c++11
 TS_HOST_INCDIR = -I$(TEE_SDK_PATH)/include
 TS_HOST_CFLAGS = $(TS_HOST_INCDIR) $(SGX_COMMON_CFLAGS)
 TS_HOST_CXXFLAGS = $(SGX_COMMON_CXXFLAGS)
-TS_HOST_LDFLAGS = -L$(SGX_LIBRARY_PATH) -L$(DCAP_LIB_PATH) -Wl,-z,noexecstack -lc -l$(Urts_Library_Name) -lpthread -lsgx_ustdc_ex -lsgx_dcap_quoteverify -lsgx_dcap_ql -lsgx_quote_ex
+TS_HOST_LDFLAGS = -L$(SGX_LIBRARY_PATH) -L$(DCAP_LIB_PATH) -Wl,-z,noexecstack -lc -l$(Urts_Library_Name) -lpthread -lsgx_dcap_quoteverify -lsgx_dcap_ql -lsgx_quote_ex
 
 Enclave_Security_Link_Flags = -Wl,-z,relro,-z,now,-z,noexecstack
 

@@ -30,7 +30,7 @@ import org.graalvm.compiler.hotspot.HotSpotGraalCompiler;
 import org.graalvm.compiler.java.GraphBuilderPhase;
 import org.graalvm.compiler.nodes.InvokeWithExceptionNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.cfg.Block;
+import org.graalvm.compiler.nodes.cfg.HIRBlock;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
@@ -76,7 +76,7 @@ public class ECallInLoopDetector {
         List<NodeSourcePosition> ret = new ArrayList<>();
         ControlFlowGraph cfg = ControlFlowGraph.computeForSchedule(graph);
         graph.getNodes(InvokeWithExceptionNode.TYPE).forEach(n -> {
-            Block block = cfg.blockFor(n);
+            HIRBlock block = cfg.blockFor(n);
             if (block != null && block.getLoop() != null) {
                 ResolvedJavaMethod method = n.getTargetMethod();
                 if (isEnclaveService(method.getDeclaringClass())) {

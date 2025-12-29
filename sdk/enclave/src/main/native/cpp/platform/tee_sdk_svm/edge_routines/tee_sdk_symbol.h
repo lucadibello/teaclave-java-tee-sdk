@@ -20,8 +20,10 @@
 
 #include <stdint.h>
 #include <assert.h>
+#include <stddef.h>
 
 /* Forward declarations for SGX environment (can't use stdio.h with -nostdinc) */
+typedef long ssize_t;
 typedef struct _IO_FILE FILE;
 int printf(const char *format, ...);
 
@@ -64,8 +66,8 @@ void deflateSetHeader();
 void dlopen();
 void dlsym();
 void endmntent();
-void fputs();
-void fscanf();
+int fputs(const char *s, FILE *stream);
+int fscanf(FILE *stream, const char *format, ...);
 void fstatvfs();
 void fstatvfs64();
 void getgrnam_r();
@@ -98,8 +100,10 @@ void timezone();
 char* strcat(char *restrict dest, const char *restrict src);
 char* strcpy(char* dest,const char* src);
 char* stpcpy(char *dest, const char *src);
+size_t strlen(const char *s);
 
 size_t __getdelim(char **lineptr, size_t *n, int delim, FILE *stream);
+ssize_t getdelim(char **lineptr, size_t *n, int delim, FILE *stream);
 
 unsigned long int pthread_self();
 

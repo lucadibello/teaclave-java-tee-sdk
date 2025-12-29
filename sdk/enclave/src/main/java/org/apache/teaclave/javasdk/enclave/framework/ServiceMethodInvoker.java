@@ -46,6 +46,7 @@ public final class ServiceMethodInvoker implements EnclaveMethodInvoker<EnclaveI
      */
     @Override
     public EnclaveInvocationResult callMethod(EnclaveInvocationContext inputData) {
+        System.out.println("[ServiceMethodInvoker] callMethod invoked");
         Throwable throwable = null;
         Object returnedValue = null;
         List<Class<?>> parameterClassList = extractParamClasses(inputData.getParameterTypes());
@@ -53,31 +54,42 @@ public final class ServiceMethodInvoker implements EnclaveMethodInvoker<EnclaveI
         String instanceIdentity = serviceHandler.getInstanceIdentity();
         String serviceName = serviceHandler.getServiceInterfaceName();
         String implementationClassName = serviceHandler.getServiceImplClassName();
+        String methodName = inputData.getMethodName();
+        System.out.println("[ServiceMethodInvoker] Service: " + serviceName + ", Impl: " + implementationClassName + ", Method: " + methodName);
+
         Object receiverInstance;
         try {
             receiverInstance = EnclaveContext.getInstance().lookupServiceInstance(instanceIdentity, serviceName, implementationClassName);
+            System.out.println("[ServiceMethodInvoker] Looked up instance: " + (receiverInstance != null ? receiverInstance.getClass().getName() : "null"));
         } catch (ConfidentialComputingException e) {
+            System.out.println("[ServiceMethodInvoker] lookupServiceInstance FAILED: " + e.getMessage());
             return new EnclaveInvocationResult(null, e);
         }
         if (receiverInstance != null) {
-            String methodName = inputData.getMethodName();
             Method method;
             // Get the public method to invoke
             try {
                 Class<?> serviceClass = Class.forName(implementationClassName);
                 method = serviceClass.getMethod(methodName, parameterClassList.toArray(new Class<?>[0]));
                 method.setAccessible(true);
+                System.out.println("[ServiceMethodInvoker] Found method: " + method);
             } catch (ReflectiveOperationException e) {
                 // Reflection exception is taken as framework's exception
+                System.out.println("[ServiceMethodInvoker] Reflection FAILED: " + e.getMessage());
                 return new EnclaveInvocationResult(null, new ConfidentialComputingException(e));
             }
             try {
                 // Call the actual method
+                System.out.println("[ServiceMethodInvoker] Invoking method...");
                 returnedValue = method.invoke(receiverInstance, inputData.getArguments());
+                System.out.println("[ServiceMethodInvoker] Method returned: " + (returnedValue != null ? returnedValue.getClass().getName() : "null"));
             } catch (Throwable t) {
+                System.out.println("[ServiceMethodInvoker] Method invocation FAILED: " + t.getClass().getName() + ": " + t.getMessage());
+                t.printStackTrace();
                 return new EnclaveInvocationResult(null, new ConfidentialComputingException(t));
             }
         } else {
+            System.out.println("[ServiceMethodInvoker] No receiver instance found!");
             throwable = new ConfidentialComputingException(
                     String.format("Didn't match any service implementation with the given class name: %s", implementationClassName));
         }

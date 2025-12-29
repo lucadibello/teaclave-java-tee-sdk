@@ -49,9 +49,10 @@ final class TeeSdkEnclaveConfigure {
     }
 
     private void parseAndInitSVMaxHeapSize(String heapSize) {
-        // make sure that svmMaxHeapSize should not larger than enclave_epc_memory * 0.8
+        // Use reference heap size from enclave config as default
+        enclaveSVMMaxHeapSize = enclaveConfigure.getReferenceEnclaveMaxHeapSize();
+        // If heapSize property is set, use the smaller of the two values
         if (heapSize != null) {
-            enclaveSVMMaxHeapSize = enclaveConfigure.getReferenceEnclaveMaxHeapSize();
             long confMaxHeapSize = Long.parseLong(heapSize) * MB;
             if (enclaveSVMMaxHeapSize > confMaxHeapSize) enclaveSVMMaxHeapSize = confMaxHeapSize;
         }

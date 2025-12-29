@@ -42,10 +42,19 @@ public class InvocationWrapper {
     public static <T> void invoke(EncData input, EncData result, CallBacks callBacks, EnclaveMethodInvoker<T> invoker) throws IOException {
         long start = System.nanoTime();
         byte[] data = transformInput(input);
+        System.out.println("[InvocationWrapper] Input data size: " + data.length + " bytes");
+
         EnclaveInvocationResult ret;
         try {
-            ret = invoker.callMethod((T) SerializationHelper.deserialize(data));
+            T deserialized = (T) SerializationHelper.deserialize(data);
+            System.out.println("[InvocationWrapper] Deserialized input type: " + (deserialized != null ? deserialized.getClass().getName() : "null"));
+            ret = invoker.callMethod(deserialized);
+            System.out.println("[InvocationWrapper] Method call completed. Result: " +
+                (ret.getResult() != null ? ret.getResult().getClass().getName() : "null") +
+                ", Exception: " + (ret.getException() != null ? ret.getException().getClass().getName() + ": " + ret.getException().getMessage() : "null"));
         } catch (Throwable t) {
+            System.out.println("[InvocationWrapper] Exception during invocation: " + t.getClass().getName() + ": " + t.getMessage());
+            t.printStackTrace();
             ret = new EnclaveInvocationResult(null, new ConfidentialComputingException(t));
         }
         // Set method returned value to result parameter
@@ -55,8 +64,15 @@ public class InvocationWrapper {
 
     private static void wrapReturnValue(EncData result, CallBacks callBacks, EnclaveInvocationResult ret) throws IOException {
         byte[] returnedValBytes;
-        returnedValBytes = SerializationHelper.serialize(ret);
+        try {
+            returnedValBytes = SerializationHelper.serialize(ret);
+        } catch (Throwable t) {
+            System.out.println("[InvocationWrapper] Serialization FAILED: " + t.getClass().getName() + ": " + t.getMessage());
+            t.printStackTrace();
+            throw t;
+        }
         int returnedValLen = returnedValBytes.length;
+        System.out.println("[InvocationWrapper] Serialized output size: " + returnedValLen + " bytes");
         /*
          * Data returned to C world should be allocated by the callback function in the C world. The memory hold by
          * returnedValBytes shall be freed in the explicit finally clause.

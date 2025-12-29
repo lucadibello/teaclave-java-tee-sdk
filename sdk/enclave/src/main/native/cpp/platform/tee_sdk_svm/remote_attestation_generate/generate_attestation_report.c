@@ -16,6 +16,10 @@
 // under the License.
 
 #include "generate_attestation_report.h"
+#include <string.h>
+
+/* Forward declaration for ocall defined in EDL (tee_sdk_enclave.edl) */
+quote3_error_t ocall_get_target_info(quote3_error_t* retval, sgx_target_info_t* qe_target_info);
 
 int generate_remote_attestation_report(void* hash, size_t hash_length, sgx_report_t* ra_report) {
 	sgx_report_data_t report_data;

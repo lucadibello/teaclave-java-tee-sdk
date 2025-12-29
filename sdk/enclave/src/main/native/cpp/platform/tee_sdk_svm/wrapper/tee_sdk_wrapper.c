@@ -53,16 +53,26 @@ int tee_sdk_random(void* data, long size) {
 }
 
 int enclave_svm_isolate_create(void* isolate, void* isolateThread, int flag, char* args) {
-    graal_isolate_t* isolate_t;
-    graal_isolatethread_t* thread_t;
+    graal_isolate_t* isolate_t = NULL;
+    graal_isolatethread_t* thread_t = NULL;
 
     // Implicitly set graal_create_isolate_params_t param as NULL.
     enable_trace_symbol_calling = flag;
-    int argc = 2;
-    char* parameters[2];
-    parameters[0] = NULL;
-    parameters[1] = args;
-    int ret = create_isolate_with_params(argc, parameters, &isolate_t, &thread_t);
+
+    // Try the standard graal_create_isolate first (simpler, no arg parsing issues)
+    int ret = graal_create_isolate(NULL, &isolate_t, &thread_t);
+
+    if (ret != 0 || isolate_t == NULL || thread_t == NULL) {
+        // Fallback to create_isolate_with_params
+        isolate_t = NULL;
+        thread_t = NULL;
+        int argc = 2;
+        char* parameters[2];
+        parameters[0] = NULL;
+        parameters[1] = args;
+        ret = create_isolate_with_params(argc, parameters, &isolate_t, &thread_t);
+    }
+
     *(uint64_t*)isolate = (uint64_t)isolate_t;
     *(uint64_t*)isolateThread = (uint64_t)thread_t;
     return ret;

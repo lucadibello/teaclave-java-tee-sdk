@@ -45,7 +45,8 @@ public class EnclaveMemoryFeature implements Feature {
     @Override
     public List<Class<? extends Feature>> getRequiredFeatures() {
         try {
-            Class<? extends Feature> physicalMemClass = (Class<? extends Feature>) Class.forName("com.oracle.svm.core.posix.linux.LinuxPhysicalMemory$PhysicalMemoryFeature");
+            // Class name changed in newer GraalVM versions (17.0.9+)
+            Class<? extends Feature> physicalMemClass = (Class<? extends Feature>) Class.forName("com.oracle.svm.core.posix.linux.LinuxPhysicalMemorySupportImplFeature");
             return List.of(physicalMemClass);
         } catch (ClassNotFoundException e) {
             throw VMError.shouldNotReachHere(e);

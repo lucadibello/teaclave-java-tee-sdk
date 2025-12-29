@@ -19,18 +19,18 @@ include /opt/javaenclave/config/config.mk
 include /opt/javaenclave/config/platform/tee_sdk_svm/jni/config.mk
 
 # additional settings for stubs
-XATTR_STUB_SRC := /opt/javaenclave/build_app/stubs/xattr_stubs.c
-XATTR_STUB_OBJ := ${ENCLAVE_BASE_DIR}/target/enclave_workspace/xattr_stubs.o
+POSIX_STUB_SRC := /opt/javaenclave/build_app/stubs/posix_stubs.c
+POSIX_STUB_OBJ := ${ENCLAVE_BASE_DIR}/target/enclave_workspace/posix_stubs.o
 
 .PHONY: all build clean
 
-# Compile the xattr stubs
-${XATTR_STUB_OBJ}: ${XATTR_STUB_SRC}
+# Compile the posix stubs
+${POSIX_STUB_OBJ}: ${POSIX_STUB_SRC}
 	$(CC) -c -fPIC -ffunction-sections -fdata-sections -fvisibility=hidden -o $@ $<
 
 all: build
 
-build: ${XATTR_STUB_OBJ}
+build: ${POSIX_STUB_OBJ}
 ifeq ($(TEE_SDK), TRUE)
     # remove lib_tee_sdk_svm_load.so from target/svm-output, because it's
     # compiled target to common execution environment.
@@ -43,7 +43,7 @@ ifeq ($(TEE_SDK), TRUE)
 
 	$(CC) -o ${ENCLAVE_BASE_DIR}/target/svm-output/lib_tee_sdk_svm_load \
 	/opt/javaenclave/bin/platform/tee_sdk_svm/*.o ${ENCLAVE_BASE_DIR}/target/svm-output/lib_tee_sdk_svm_load.o \
-	${XATTR_STUB_OBJ} \
+	${POSIX_STUB_OBJ} \
 	-L${JAVA_HOME}/lib/static/linux-amd64/glibc    \
 	-L${ENCLAVE_BASE_DIR}/target/enclave_workspace \
 	-fpie -ljava -lzip -lnio -lnet -ljvm -lfdlibm -llibchelper \

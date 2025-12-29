@@ -23,7 +23,7 @@ import org.apache.teaclave.javasdk.common.exception.ConfidentialComputingExcepti
 import org.apache.teaclave.javasdk.enclave.framework.LoadServiceInvoker;
 import org.apache.teaclave.javasdk.enclave.framework.ServiceMethodInvoker;
 import org.apache.teaclave.javasdk.enclave.framework.UnloadServiceInvoker;
-import com.oracle.svm.core.annotate.AutomaticFeature;
+// Feature is registered via META-INF/services/org.graalvm.nativeimage.hosted.Feature
 import com.oracle.svm.core.c.libc.TemporaryBuildDirectoryProvider;
 import com.oracle.svm.core.jdk.resources.NativeImageResourceFileSystemUtil;
 import com.oracle.svm.core.util.VMError;
@@ -32,8 +32,8 @@ import com.oracle.svm.hosted.FeatureImpl;
 import com.oracle.svm.hosted.ImageClassLoader;
 import com.oracle.svm.hosted.NativeImageGenerator;
 import com.oracle.svm.hosted.ServiceLoaderFeature;
-import com.oracle.svm.reflect.hosted.ReflectionFeature;
-import com.oracle.svm.reflect.serialize.hosted.SerializationFeature;
+import com.oracle.svm.hosted.reflect.ReflectionFeature;
+import com.oracle.svm.hosted.reflect.serialize.SerializationFeature;
 import org.graalvm.nativeimage.ImageSingletons;
 import org.graalvm.nativeimage.hosted.Feature;
 import org.graalvm.nativeimage.hosted.RuntimeReflection;
@@ -61,7 +61,6 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-@AutomaticFeature
 public class EnclaveFeature implements Feature {
 
     private ImageClassLoader imageClassLoader;

@@ -107,7 +107,12 @@ abstract class AbstractEnclave implements Enclave {
             // Only need to provide service's interface name is enough to load service
             // in enclave.
             EnclaveInvocationResult resultWrapper;
-            resultWrapper = (EnclaveInvocationResult) SerializationHelper.deserialize(loadServiceNative(service.getName()));
+            final byte[] service_ser = loadServiceNative(service.getName());
+            if (service_ser.length == 0 || service_ser == null) {
+                throw new ServicesLoadingException(String.format("service %s load failed in enclave. ret=%d",
+                        service.getName(), service_ser == null ? -1 : service_ser.length));
+            }
+            resultWrapper = (EnclaveInvocationResult) SerializationHelper.deserialize(service_ser);
             trace.setCostInnerEnclave(resultWrapper.getCost());
             Throwable exception = resultWrapper.getException();
             Object result = resultWrapper.getResult();

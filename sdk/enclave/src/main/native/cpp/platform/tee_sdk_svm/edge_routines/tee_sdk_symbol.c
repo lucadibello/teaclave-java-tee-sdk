@@ -43,8 +43,8 @@ void deflateSetHeader() {TRACE_SYMBOL_CALL(); ASSERT();}
 void dlopen() {TRACE_SYMBOL_CALL(); ASSERT();}
 void dlsym() {TRACE_SYMBOL_CALL(); ASSERT();}
 void endmntent() {TRACE_SYMBOL_CALL(); ASSERT();}
-void fputs() {TRACE_SYMBOL_CALL(); ASSERT();}
-void fscanf() {TRACE_SYMBOL_CALL(); ASSERT();}
+int fputs(const char *s, FILE *stream) {TRACE_SYMBOL_CALL(); ASSERT(); return -1;}
+int fscanf(FILE *stream, const char *format, ...) {TRACE_SYMBOL_CALL(); ASSERT(); return -1;}
 void fstatvfs() {TRACE_SYMBOL_CALL(); ASSERT();}
 void fstatvfs64() {TRACE_SYMBOL_CALL(); ASSERT();}
 void getgrnam_r() {TRACE_SYMBOL_CALL(); ASSERT();}
@@ -92,15 +92,28 @@ char* strcpy(char* dest, const char* sourse) {
     return res;
 }
 
+size_t strlen(const char *s) {
+    TRACE_SYMBOL_CALL();
+    const char *p = s;
+    while (*p != '\0') { p++; }
+    return (size_t)(p - s);
+}
+
 char* stpcpy(char *dest, const char *sourse) {
     TRACE_SYMBOL_CALL();
     strcpy(dest, sourse);
     return dest + strlen(sourse);
 }
 
+ssize_t getdelim(char **lineptr, size_t *n, int delim, FILE *stream) {
+    TRACE_SYMBOL_CALL();
+    ASSERT();
+    return -1; /* Not supported in enclave */
+}
+
 size_t __getdelim(char **lineptr, size_t *n, int delim, FILE *stream) {
     TRACE_SYMBOL_CALL();
-    return getdelim(lineptr, n, delim, stream);
+    return (size_t)getdelim(lineptr, n, delim, stream);
 }
 
 unsigned long int pthread_self(void) {

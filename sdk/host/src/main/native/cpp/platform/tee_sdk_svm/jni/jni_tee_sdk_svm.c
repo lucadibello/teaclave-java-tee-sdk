@@ -63,6 +63,9 @@ enclave_calling_stub_result enclave_calling_entry(JNIEnv *env, jlong enclave_han
     jbyte *payload_copy = (*env)->GetByteArrayElements(env, payload, NULL);
     int payload_copy_length = (*env)->GetArrayLength(env, payload);
 
+    fprintf(stderr, "[JNI DEBUG] enclave_calling_entry: input_len=%d, enclave_handler=%ld, isolate_handler=%ld\n",
+            payload_copy_length, (long)enclave_handler, (long)isolate_handler);
+
     enc_data_t input;
     input.data = (char*)payload_copy;
     input.data_len = payload_copy_length;
@@ -76,11 +79,20 @@ enclave_calling_stub_result enclave_calling_entry(JNIEnv *env, jlong enclave_han
     result_wrapper.result = invocation_result_array;
 
     stub(enclave_handler, &result_wrapper.ret, (graal_isolate_t*)isolate_handler, (void*)(input.data), (size_t)(input.data_len), (void*)(&(output.data)), (size_t*)(&(output.data_len)));
+
+    fprintf(stderr, "[JNI DEBUG] enclave_calling_entry: ret=%d, output.data=%p, output.data_len=%zu\n",
+            result_wrapper.ret, (void*)output.data, (size_t)output.data_len);
+
     if (result_wrapper.ret != 0) {
+        fprintf(stderr, "[JNI DEBUG] enclave_calling_entry: ecall FAILED with ret=%d\n", result_wrapper.ret);
         (*env)->ReleaseByteArrayElements(env, payload, payload_copy, 0);
         // free buffer malloc in native image by callback mechanism.
         free(output.data);
         return result_wrapper;
+    }
+
+    if (output.data_len == 0) {
+        fprintf(stderr, "[JNI DEBUG] WARNING: output.data_len is 0 - enclave returned empty response!\n");
     }
 
     // create a byte array.
@@ -132,8 +144,14 @@ JavaEnclave_TeeSDKSVMNativeSvmAttachIsolate(JNIEnv *env, jobject obj, jlong encl
     int ret = 0;
 
     char *args_str = (*env)->GetStringUTFChars(env, args, 0);
+    fprintf(stderr, "[JNI DEBUG] SvmAttachIsolate: enclave_handler=%ld, flag=%d, args=%s\n", (long)enclave_handler, flag, args_str);
+
     enclave_svm_isolate_create((size_t)enclave_handler, &ret, (void *)(&isolate), (void *)(&isolateThread), flag, args_str);
+
+    fprintf(stderr, "[JNI DEBUG] SvmAttachIsolate: ret=%d, isolate=%lu, isolateThread=%lu\n", ret, (unsigned long)isolate, (unsigned long)isolateThread);
+
     if (ret != 0) {
+        fprintf(stderr, "[JNI DEBUG] SvmAttachIsolate FAILED: ret=%d\n", ret);
         (*env)->ReleaseStringUTFChars(env, args, args_str);
         THROW_EXCEPTION(env, ENCLAVE_CREATING_EXCEPTION, "attach native svm failed when creating an enclave.")
     }
@@ -145,15 +163,21 @@ JavaEnclave_TeeSDKSVMNativeSvmAttachIsolate(JNIEnv *env, jobject obj, jlong encl
     // set isolateThread back to isolateThreadHandle field.
     set_long_field_value(env, enclave_class, obj, "isolateThreadHandle", (jlong)isolateThread);
 
+    fprintf(stderr, "[JNI DEBUG] SvmAttachIsolate: isolate set to Java field\n");
+
     return ret;
 }
 
 JNIEXPORT jbyteArray JNICALL
 JavaEnclave_TeeSDKSVMNativeLoadService(JNIEnv *env, jobject obj, jlong enclave_handler, jlong isolate_handler, jbyteArray load_service_payload) {
+    fprintf(stderr, "[JNI DEBUG] NativeLoadService: enclave_handler=%ld, isolate_handler=%ld\n",
+            (long)enclave_handler, (long)isolate_handler);
     enclave_calling_stub_result result_wrapper = enclave_calling_entry(env, enclave_handler, isolate_handler, load_service_payload, (enclave_calling_stub) load_enclave_svm_services);
+    fprintf(stderr, "[JNI DEBUG] NativeLoadService: ret=%d\n", result_wrapper.ret);
     if (result_wrapper.ret != 0) {
         THROW_EXCEPTION(env, ENCLAVE_SERVICE_LOADING_EXCEPTION, "tee sdk service loading native call failed.")
     }
+    fprintf(stderr, "[JNI DEBUG] NativeLoadService: succeeded\n");
     return result_wrapper.result;
 }
 

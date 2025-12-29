@@ -24,7 +24,7 @@ import org.apache.teaclave.javasdk.enclave.framework.ServiceMethodInvoker;
 import org.apache.teaclave.javasdk.enclave.framework.UnloadServiceInvoker;
 import com.oracle.svm.core.IsolateArgumentParser;
 import com.oracle.svm.core.SubstrateGCOptions;
-import com.oracle.svm.core.annotate.Uninterruptible;
+import com.oracle.svm.core.Uninterruptible;
 import com.oracle.svm.core.c.function.CEntryPointActions;
 import com.oracle.svm.core.c.function.CEntryPointCreateIsolateParameters;
 import com.oracle.svm.core.c.function.CEntryPointNativeFunctions;

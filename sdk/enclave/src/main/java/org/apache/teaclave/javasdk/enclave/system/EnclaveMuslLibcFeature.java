@@ -17,21 +17,22 @@
 
 package org.apache.teaclave.javasdk.enclave.system;
 
-import com.oracle.svm.core.annotate.AutomaticFeature;
+import com.oracle.svm.core.feature.AutomaticallyRegisteredFeature;
 import com.oracle.svm.core.c.libc.LibCBase;
-import com.oracle.svm.core.posix.linux.libc.LibCFeature;
-import com.oracle.svm.core.posix.linux.libc.MuslLibC;
+import com.oracle.svm.hosted.c.libc.HostedLibCFeature;
+import com.oracle.svm.core.c.libc.MuslLibC;
 import com.oracle.svm.core.util.UserError;
 import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
 import org.graalvm.nativeimage.ImageSingletons;
+import org.graalvm.nativeimage.hosted.Feature;
 
 import java.util.ServiceLoader;
 
-@AutomaticFeature
-public class EnclaveMuslLibcFeature extends LibCFeature {
+@AutomaticallyRegisteredFeature
+public class EnclaveMuslLibcFeature extends HostedLibCFeature {
 
     @Override
-    public void afterRegistration(AfterRegistrationAccess access) {
+    public void afterRegistration(Feature.AfterRegistrationAccess access) {
         String targetLibC = LibCOptions.UseLibC.getValue();
         ServiceLoader<LibCBase> loader = ServiceLoader.load(LibCBase.class);
         for (LibCBase libc : loader) {
@@ -40,9 +41,8 @@ public class EnclaveMuslLibcFeature extends LibCFeature {
                     if (JavaVersionUtil.JAVA_SPEC < 11) {
                         throw UserError.abort("Musl can only be used with labsjdk 11+.");
                     }
-                } else {
-                    libc.checkIfLibCSupported();
                 }
+                // checkIfLibCSupported() was removed in GraalVM 23.0, validation is handled elsewhere
                 ImageSingletons.add(LibCBase.class, libc);
                 return;
             }

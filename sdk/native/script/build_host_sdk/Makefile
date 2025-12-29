@@ -26,7 +26,6 @@ endif
 
 ifeq ($(TEE_SDK), TRUE)
 	$(MAKE) -C $(HOST_BASE_DIR)/src/main/native/cpp/platform/tee_sdk_svm
-	$(MAKE) -C $(HOST_BASE_DIR)/src/main/native/cpp/platform/libos_occlum_enclave/jni
 endif
 
 ifeq ($(EMBEDDED_LIB_OS), TRUE)

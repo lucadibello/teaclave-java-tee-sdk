@@ -9,7 +9,7 @@ ARG REMOTE_UID=1010
 ARG REMOTE_GID=${REMOTE_UID}
 ARG REMOTE_HOME=/home/${REMOTE_USER}
 
-ARG GIT_EMAIL=${GIT_EMAIL:-"}
+ARG GIT_EMAIL=${GIT_EMAIL:-""}
 ARG GIT_NAME=${GIT_NAME:-Dev User}
 
 # Settings for additional tools
@@ -37,26 +37,24 @@ RUN apt-get update \
     && add-apt-repository universe \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
-    # Build & toolchain
+    # Build & toolchain \
     autoconf automake build-essential cmake g++ gcc make zlib1g-dev \
-    # musl toolchain for GraalVM native-image with --libc=musl
+    # musl toolchain for GraalVM native-image with --libc=musl \
     musl musl-dev musl-tools \
     \
-    # VCS
+    # VCS \
     git \
     \
-    # Networking & crypto
+    # Networking & crypto \
     ca-certificates curl openssh-client openssh-server \
     openssl \
     \
-    # Archiving & compression
+    # Archiving & compression \
     tar unzip xz-utils \
     \
-    # Shells & terminal
+    # Shells & terminal \
     sudo tmux zsh \
-    # Newer Java version
-    openjdk-${OPENJDK_VERSION}-jdk \
-    # fd-find for file searching
+    # fd-find for file searching \
     fd-find \
     && rm -rf /var/lib/apt/lists/* \
     && ln -sf /usr/bin/fdfind /usr/local/bin/fd \
@@ -106,7 +104,7 @@ RUN set -eux; \
     CC=musl-gcc ./configure --static --prefix=/usr/local/musl; \
     make -j$(nproc); \
     make install; \
-    # Create symlinks in locations where musl-gcc linker searches
+    # Create symlinks in locations where musl-gcc linker searches \
     ln -sf /usr/local/musl/lib/libz.a /usr/lib/x86_64-linux-musl/libz.a; \
     ln -sf /usr/local/musl/lib/libz.a /usr/lib/libz.a; \
     rm -rf /tmp/zlib.tar.gz /tmp/zlib-1.3.1
@@ -179,7 +177,7 @@ COPY sdk /tmp/teaclave-java-tee-sdk/sdk
 RUN /usr/local/bin/mvn install:install-file \
     -DgroupId=org.graalvm.compiler \
     -DartifactId=graal-processor \
-    -Dversion=22.2.0 \
+    -Dversion=${GRAALVM_VERSION} \
     -Dpackaging=jar \
     -Dfile="${GRAALVM_HOME}/lib/graal/graal-processor.jar"
 
