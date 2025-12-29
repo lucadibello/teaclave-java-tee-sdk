@@ -40,18 +40,32 @@ typedef struct {
 #define TEE_SDK_REMOTE_ATTESTATION_REPORT_SIGNATURE  "(J[B)Lorg/apache/teaclave/javasdk/host/TeeSdkAttestationReport;"
 #define TEE_SDK_REMOTE_ATTESTATION_REPORT_CLASS_NAME "org/apache/teaclave/javasdk/host/TeeSdkAttestationReport"
 
-#define THROW_EXCEPTION(env, exception, info)                                  \
-{                                                                              \
+/* Helper macro to throw exception - internal use only */
+#define THROW_EXCEPTION_IMPL(env, exception, info)                             \
+do {                                                                           \
     jclass ra_class = (*env)->FindClass(env, exception);                       \
     if (ra_class == NULL) {                                                    \
         fprintf(stderr, "Teaclave Java TEE SDK Error:  ");                     \
-        fprintf(stderr, exception);                                            \
+        fprintf(stderr, "%s", exception);                                      \
         fprintf(stderr, " class loading failed.\n");                           \
-        return;                                                                \
+    } else {                                                                   \
+        (*env)->ThrowNew(env, ra_class, info);                                 \
     }                                                                          \
-    (*env)->ThrowNew(env, ra_class, info);                                     \
-    return;                                                                    \
-}
+} while(0)
+
+/* Use in functions returning jint */
+#define THROW_EXCEPTION_INT(env, exception, info)                              \
+do {                                                                           \
+    THROW_EXCEPTION_IMPL(env, exception, info);                                \
+    return -1;                                                                 \
+} while(0)
+
+/* Use in functions returning pointer types (jbyteArray, jobject, etc.) */
+#define THROW_EXCEPTION_PTR(env, exception, info)                              \
+do {                                                                           \
+    THROW_EXCEPTION_IMPL(env, exception, info);                                \
+    return NULL;                                                               \
+} while(0)
 
 #ifdef __cplusplus
 extern "C" {

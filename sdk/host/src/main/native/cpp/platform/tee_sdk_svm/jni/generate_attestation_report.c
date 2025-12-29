@@ -18,7 +18,7 @@
 #include "generate_attestation_report.h"
 
 // use_aesm_qe_service determines sgx aesm remote attestation service or local qe service.
-bool use_aesm_qe_service() {
+static bool use_aesm_qe_service(void) {
     bool flag = false;
     // If environment "SGX_AESM_ADDR" is set, remote qe will be adapted.
     char *sgx_aesm_address = getenv(SGX_AESM_ADR);

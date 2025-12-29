@@ -38,6 +38,6 @@ typedef struct callback_functions_struct{
     int (*get_random_number)(void* data, long size);
 } callbacks_t;
 
-long physical_page_size();
-long physical_page_number();
-long virtual_page_size();
+long physical_page_size(void);
+long physical_page_number(void);
+long virtual_page_size(void);

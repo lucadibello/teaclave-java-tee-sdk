@@ -17,6 +17,8 @@
 
 #include "jni_remote_attestation_verify.h"
 
+#include <string.h>
+
 #define QUOTE_VERIFICATION_STATUS_SUCCESS                 0
 #define QUOTE_VERIFICATION_STATUS_GET_DATA_SIZE_FAILED    1
 #define QUOTE_VERIFICATION_STATUS_QUOTE_VERIFY_FAILED     2

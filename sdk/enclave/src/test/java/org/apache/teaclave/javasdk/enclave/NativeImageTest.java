@@ -251,6 +251,17 @@ public abstract class NativeImageTest implements NativeImageTestable {
         command.add("-H:+ReportExceptionStackTraces");
         command.add("-H:Name=lib" + SVM_ENCLAVE_LIB);
         command.add("-H:-DeleteLocalSymbols");
+        // Add the required features explicitly (since @AutomaticFeature is deprecated)
+        command.add(
+            "--features=" +
+                String.join(
+                    ",",
+                    "org.apache.teaclave.javasdk.enclave.EnclaveGlobalDataFeature",
+                    "org.apache.teaclave.javasdk.enclave.EnclaveFeature",
+                    "org.apache.teaclave.javasdk.enclave.system.EnclaveMemoryFeature",
+                    "org.apache.teaclave.javasdk.enclave.cpufeatures.EnclaveAMD64CPUFeatureAccessFeature"
+                )
+        );
         List<String> extraOptions = extraSVMOptions();
         if (extraOptions != null && !extraOptions.isEmpty()) {
             command.addAll(extraOptions);

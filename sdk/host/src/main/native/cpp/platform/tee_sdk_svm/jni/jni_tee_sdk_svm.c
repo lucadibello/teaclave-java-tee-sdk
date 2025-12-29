@@ -73,10 +73,10 @@ enclave_calling_stub_result enclave_calling_entry(JNIEnv *env, jlong enclave_han
     output.data = NULL;
     output.data_len = 0x0;
 
-    jbyteArray invocation_result_array;
+    jbyteArray invocation_result_array = NULL;
     enclave_calling_stub_result result_wrapper;
     result_wrapper.ret = 0;
-    result_wrapper.result = invocation_result_array;
+    result_wrapper.result = NULL;
 
     stub(enclave_handler, &result_wrapper.ret, (graal_isolate_t*)isolate_handler, (void*)(input.data), (size_t)(input.data_len), (void*)(&(output.data)), (size_t*)(&(output.data_len)));
 
@@ -126,7 +126,7 @@ JavaEnclave_TeeSDKSVMNativeCreateEnclave(JNIEnv *env, jobject obj, jint mode, js
     int ret = sgx_create_enclave(path_str, enable_debug_mode, NULL, NULL, &enclave_id, NULL);
     (*env)->ReleaseStringUTFChars(env, path, path_str);
     if (ret != SGX_SUCCESS) {
-        THROW_EXCEPTION(env, ENCLAVE_CREATING_EXCEPTION, "create tee sdk enclave by native calling failed.")
+        THROW_EXCEPTION_INT(env, ENCLAVE_CREATING_EXCEPTION, "create tee sdk enclave by native calling failed.");
     }
 
     // set enclave_handler back to TeeSdkEnclave.enclaveHandle field.
@@ -143,17 +143,21 @@ JavaEnclave_TeeSDKSVMNativeSvmAttachIsolate(JNIEnv *env, jobject obj, jlong encl
     uint64_t isolateThread = 0;
     int ret = 0;
 
-    char *args_str = (*env)->GetStringUTFChars(env, args, 0);
+    const char *args_str = (*env)->GetStringUTFChars(env, args, 0);
     fprintf(stderr, "[JNI DEBUG] SvmAttachIsolate: enclave_handler=%ld, flag=%d, args=%s\n", (long)enclave_handler, flag, args_str);
 
-    enclave_svm_isolate_create((size_t)enclave_handler, &ret, (void *)(&isolate), (void *)(&isolateThread), flag, args_str);
+    /* SGX EDL declares args as [string, in] char* - it's not modified, so cast is safe */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+    enclave_svm_isolate_create((size_t)enclave_handler, &ret, (void *)(&isolate), (void *)(&isolateThread), flag, (char *)args_str);
+#pragma GCC diagnostic pop
 
     fprintf(stderr, "[JNI DEBUG] SvmAttachIsolate: ret=%d, isolate=%lu, isolateThread=%lu\n", ret, (unsigned long)isolate, (unsigned long)isolateThread);
 
     if (ret != 0) {
         fprintf(stderr, "[JNI DEBUG] SvmAttachIsolate FAILED: ret=%d\n", ret);
         (*env)->ReleaseStringUTFChars(env, args, args_str);
-        THROW_EXCEPTION(env, ENCLAVE_CREATING_EXCEPTION, "attach native svm failed when creating an enclave.")
+        THROW_EXCEPTION_INT(env, ENCLAVE_CREATING_EXCEPTION, "attach native svm failed when creating an enclave.");
     }
 
     (*env)->ReleaseStringUTFChars(env, args, args_str);
@@ -172,10 +176,14 @@ JNIEXPORT jbyteArray JNICALL
 JavaEnclave_TeeSDKSVMNativeLoadService(JNIEnv *env, jobject obj, jlong enclave_handler, jlong isolate_handler, jbyteArray load_service_payload) {
     fprintf(stderr, "[JNI DEBUG] NativeLoadService: enclave_handler=%ld, isolate_handler=%ld\n",
             (long)enclave_handler, (long)isolate_handler);
+    /* SGX ecall wrapper has compatible calling convention but different return type */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type"
     enclave_calling_stub_result result_wrapper = enclave_calling_entry(env, enclave_handler, isolate_handler, load_service_payload, (enclave_calling_stub) load_enclave_svm_services);
+#pragma GCC diagnostic pop
     fprintf(stderr, "[JNI DEBUG] NativeLoadService: ret=%d\n", result_wrapper.ret);
     if (result_wrapper.ret != 0) {
-        THROW_EXCEPTION(env, ENCLAVE_SERVICE_LOADING_EXCEPTION, "tee sdk service loading native call failed.")
+        THROW_EXCEPTION_PTR(env, ENCLAVE_SERVICE_LOADING_EXCEPTION, "tee sdk service loading native call failed.");
     }
     fprintf(stderr, "[JNI DEBUG] NativeLoadService: succeeded\n");
     return result_wrapper.result;
@@ -183,18 +191,24 @@ JavaEnclave_TeeSDKSVMNativeLoadService(JNIEnv *env, jobject obj, jlong enclave_h
 
 JNIEXPORT jbyteArray JNICALL
 JavaEnclave_TeeSDKSVMNativeInvokeMethod(JNIEnv *env, jobject obj, jlong enclave_handler, jlong isolate_handler, jbyteArray invoke_service_payload) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type"
     enclave_calling_stub_result result_wrapper = enclave_calling_entry(env, enclave_handler, isolate_handler, invoke_service_payload, (enclave_calling_stub) invoke_enclave_svm_service);
+#pragma GCC diagnostic pop
     if (result_wrapper.ret != 0) {
-        THROW_EXCEPTION(env, ENCLAVE_SERVICE_INVOKING_EXCEPTION, "tee sdk service method invoking native call failed.")
+        THROW_EXCEPTION_PTR(env, ENCLAVE_SERVICE_INVOKING_EXCEPTION, "tee sdk service method invoking native call failed.");
     }
     return result_wrapper.result;
 }
 
 JNIEXPORT jbyteArray JNICALL
 JavaEnclave_TeeSDKSVMNativeUnloadService(JNIEnv *env, jobject obj, jlong enclave_handler, jlong isolate_handler, jbyteArray unload_service_payload) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type"
     enclave_calling_stub_result result_wrapper = enclave_calling_entry(env, enclave_handler, isolate_handler, unload_service_payload, (enclave_calling_stub) unload_enclave_svm_service);
+#pragma GCC diagnostic pop
     if (result_wrapper.ret != 0) {
-        THROW_EXCEPTION(env, ENCLAVE_SERVICE_UNLOADING_EXCEPTION, "tee sdk service unloading native call failed.")
+        THROW_EXCEPTION_PTR(env, ENCLAVE_SERVICE_UNLOADING_EXCEPTION, "tee sdk service unloading native call failed.");
     }
     return result_wrapper.result;
 }
@@ -204,7 +218,7 @@ JavaEnclave_TeeSDKSVMNativeSvmDetachIsolate(JNIEnv *env, jobject obj, jlong encl
     int ret = 0;
     enclave_svm_isolate_destroy((sgx_enclave_id_t)enclave_handler, &ret, (uint64_t)isolate_thread_handler);
     if (ret != 0) {
-        THROW_EXCEPTION(env, ENCLAVE_DESTROYING_EXCEPTION, "isolate destroy native call failed.")
+        THROW_EXCEPTION_INT(env, ENCLAVE_DESTROYING_EXCEPTION, "isolate destroy native call failed.");
     }
     return ret;
 }
@@ -212,7 +226,7 @@ JavaEnclave_TeeSDKSVMNativeSvmDetachIsolate(JNIEnv *env, jobject obj, jlong encl
 JNIEXPORT jint JNICALL
 JavaEnclave_TeeSDKSVMNativeDestroyEnclave(JNIEnv *env, jobject obj, jlong enclave_handler) {
     if ((jint)sgx_destroy_enclave((sgx_enclave_id_t)enclave_handler) != 0) {
-        THROW_EXCEPTION(env, ENCLAVE_DESTROYING_EXCEPTION, "enclave destroy native call failed.")
+        THROW_EXCEPTION_INT(env, ENCLAVE_DESTROYING_EXCEPTION, "enclave destroy native call failed.");
     }
     return 0;
 }
@@ -223,17 +237,17 @@ JavaEnclave_TeeSDK_REMOTE_ATTESTATION_REPORT(JNIEnv *env, jobject obj, jlong enc
     quote3_error_t qe3_ret = SGX_QL_SUCCESS;
     // Step one, load remote attestation related .signed files.
     if (SGX_QL_SUCCESS != (qe3_ret = load_qe_signed_package())) {
-        THROW_EXCEPTION(env, REMOTE_ATTESTATION_CLASS_NAME, "load remote attestation related .signed files failed")
+        THROW_EXCEPTION_PTR(env, REMOTE_ATTESTATION_CLASS_NAME, "load remote attestation related .signed files failed");
     }
 
     // Step two, generate target enclave's report info.
     sgx_report_t ra_report;
     jbyte *data_copy = (*env)->GetByteArrayElements(env, data, NULL);
     int length = (*env)->GetArrayLength(env, data);
-    generate_remote_attestation_report(enclave_handler, &ret, (void *)data_copy, (size_t)length, &ra_report);
+    generate_remote_attestation_report((sgx_enclave_id_t)enclave_handler, &ret, (void *)data_copy, (size_t)length, &ra_report);
     if (ret != 0) {
         (*env)->ReleaseByteArrayElements(env, data, data_copy, 0);
-        THROW_EXCEPTION(env, REMOTE_ATTESTATION_CLASS_NAME, "generate target enclave's report info failed")
+        THROW_EXCEPTION_PTR(env, REMOTE_ATTESTATION_CLASS_NAME, "generate target enclave's report info failed");
     }
 
     // Step three, get quote size.
@@ -241,7 +255,7 @@ JavaEnclave_TeeSDK_REMOTE_ATTESTATION_REPORT(JNIEnv *env, jobject obj, jlong enc
     qe3_ret = sgx_qe_get_quote_size(&quote_size);
     if (SGX_QL_SUCCESS != qe3_ret) {
         (*env)->ReleaseByteArrayElements(env, data, data_copy, 0);
-        THROW_EXCEPTION(env, REMOTE_ATTESTATION_CLASS_NAME, "get quote size failed")
+        THROW_EXCEPTION_PTR(env, REMOTE_ATTESTATION_CLASS_NAME, "get quote size failed");
     }
 
     // Step four, get quote data from target enclave's report.
@@ -250,7 +264,7 @@ JavaEnclave_TeeSDK_REMOTE_ATTESTATION_REPORT(JNIEnv *env, jobject obj, jlong enc
     quote_buffer_ptr = (uint8_t*)malloc(quote_size);
     if (NULL == quote_buffer_ptr) {
         (*env)->ReleaseByteArrayElements(env, data, data_copy, 0);
-        THROW_EXCEPTION(env, REMOTE_ATTESTATION_CLASS_NAME, "get quote temp heap for target enclave's report failed")
+        THROW_EXCEPTION_PTR(env, REMOTE_ATTESTATION_CLASS_NAME, "get quote temp heap for target enclave's report failed");
     }
     memset(quote_buffer_ptr, 0, quote_size);
 
@@ -260,7 +274,7 @@ JavaEnclave_TeeSDK_REMOTE_ATTESTATION_REPORT(JNIEnv *env, jobject obj, jlong enc
             free(quote_buffer_ptr);
         }
         (*env)->ReleaseByteArrayElements(env, data, data_copy, 0);
-        THROW_EXCEPTION(env, REMOTE_ATTESTATION_CLASS_NAME ,"get quote data from target enclave's report failed")
+        THROW_EXCEPTION_PTR(env, REMOTE_ATTESTATION_CLASS_NAME, "get quote data from target enclave's report failed");
     }
 
     // Step five, clear up loaded qe.
@@ -270,7 +284,7 @@ JavaEnclave_TeeSDK_REMOTE_ATTESTATION_REPORT(JNIEnv *env, jobject obj, jlong enc
     }
 
     // create a quote byte array.
-    jbyteArray quote_array = (*env)->NewByteArray(env, quote_size);
+    jbyteArray quote_array = (*env)->NewByteArray(env, (jsize)quote_size);
     jbyte *quote_array_ptr = (*env)->GetByteArrayElements(env, quote_array, NULL);
     memcpy(quote_array_ptr, quote_buffer_ptr, (size_t)quote_size);
 

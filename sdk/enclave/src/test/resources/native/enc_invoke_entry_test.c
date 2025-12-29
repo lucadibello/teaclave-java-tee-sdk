@@ -106,7 +106,7 @@ JNIEXPORT void JNICALL Java_org_apache_teaclave_javasdk_enclave_EnclaveTestHelpe
 JNIEXPORT void JNICALL Java_org_apache_teaclave_javasdk_enclave_EnclaveTestHelper_createIsolate___3Ljava_lang_String_2
   (JNIEnv *env, jclass clazz, jobjectArray argv){
        int size = (*env)->GetArrayLength(env, argv);
-       char** parameters = (char **)malloc(size * sizeof(char*));
+       const char** parameters = (const char **)malloc(size * sizeof(const char*));
        jstring* jstr_array = (jstring *)malloc(size * sizeof(jstring));
        jstring jstr;
        for(int i = 0 ; i < size ; i++){
@@ -114,12 +114,14 @@ JNIEXPORT void JNICALL Java_org_apache_teaclave_javasdk_enclave_EnclaveTestHelpe
             jstr_array[i] = jstr;
             parameters[i] = (*env)->GetStringUTFChars(env, jstr, 0);
        }
-       if (create_isolate_with_params(size, parameters, &isolate, &thread) != 0){
+       if (create_isolate_with_params(size, (char**)parameters, &isolate, &thread) != 0){
           fprintf(stderr, "error on creating isolate with parameters\n");
        }
        for( int i=0; i < size; i++){
             (*env)->ReleaseStringUTFChars(env, jstr_array[i], parameters[i]);
        }
+       free(parameters);
+       free(jstr_array);
 }
 
 JNIEXPORT void JNICALL Java_org_apache_teaclave_javasdk_enclave_EnclaveTestHelper_destroyIsolate

@@ -41,7 +41,7 @@ mkdir -p $DEST_DIR
 
 # Build and install teaclave sdk
 mkdir -p ${DEST_DIR}
-mvn -f sdk/pom.xml clean install -Pnative -DskipTests
+mvn -f sdk/pom.xml clean install -Pnative
 cp -r sdk/native/bin ${DEST_DIR}
 cp -r sdk/native/config ${DEST_DIR}
 cp -r sdk/native/script/build_app ${DEST_DIR}

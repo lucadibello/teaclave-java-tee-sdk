@@ -17,18 +17,16 @@
 
 package org.apache.teaclave.javasdk.enclave.system;
 
+import com.oracle.svm.core.os.VirtualMemoryProvider;
+import com.oracle.svm.core.util.VMError;
+import java.util.List;
 import org.apache.teaclave.javasdk.enclave.EnclaveOptions;
 import org.apache.teaclave.javasdk.enclave.EnclavePlatFormSettings;
 import org.apache.teaclave.javasdk.enclave.c.EnclaveEnvironment;
 import org.apache.teaclave.javasdk.enclave.system.EnclavePhysicalMemory.PhysicalMemorySupportImpl;
-import com.oracle.svm.core.annotate.AutomaticFeature;
-import com.oracle.svm.core.os.VirtualMemoryProvider;
-import com.oracle.svm.core.util.VMError;
 import org.graalvm.nativeimage.ImageSingletons;
 import org.graalvm.nativeimage.hosted.Feature;
 import org.graalvm.nativeimage.impl.RuntimeClassInitializationSupport;
-
-import java.util.List;
 
 /**
  * Native image queries the memory page size and heap pages number at runtime with {@code sysconf(_SC_PHYS_PAGES)} and
@@ -40,13 +38,17 @@ import java.util.List;
  * {@code org.apache.teaclave.javasdk.enclave.NativeImageTest#compileJNILibrary()} for details.
  * <p>
  */
-@AutomaticFeature
 public class EnclaveMemoryFeature implements Feature {
+
     @Override
     public List<Class<? extends Feature>> getRequiredFeatures() {
         try {
             // Class name changed in newer GraalVM versions (17.0.9+)
-            Class<? extends Feature> physicalMemClass = (Class<? extends Feature>) Class.forName("com.oracle.svm.core.posix.linux.LinuxPhysicalMemorySupportImplFeature");
+            Class<? extends Feature> physicalMemClass = (Class<
+                ? extends Feature
+            >) Class.forName(
+                "com.oracle.svm.core.posix.linux.LinuxPhysicalMemorySupportImplFeature"
+            );
             return List.of(physicalMemClass);
         } catch (ClassNotFoundException e) {
             throw VMError.shouldNotReachHere(e);
@@ -56,10 +58,21 @@ public class EnclaveMemoryFeature implements Feature {
     @Override
     public void afterRegistration(AfterRegistrationAccess access) {
         if (EnclaveOptions.RunInEnclave.getValue()) {
-            RuntimeClassInitializationSupport rci = ImageSingletons.lookup(RuntimeClassInitializationSupport.class);
-            rci.initializeAtBuildTime("org.apache.teaclave.javasdk.enclave.system.EnclaveVirtualMemoryProvider", "Native Image classes are always initialized at build time");
-            EnclavePlatFormSettings.replaceImageSingletonEntry(PhysicalMemorySupportImpl.getPhysicalMemorySupportClass(), new PhysicalMemorySupportImpl());
-            ImageSingletons.add(VirtualMemoryProvider.class, new EnclaveVirtualMemoryProvider());
+            RuntimeClassInitializationSupport rci = ImageSingletons.lookup(
+                RuntimeClassInitializationSupport.class
+            );
+            rci.initializeAtBuildTime(
+                "org.apache.teaclave.javasdk.enclave.system.EnclaveVirtualMemoryProvider",
+                "Native Image classes are always initialized at build time"
+            );
+            EnclavePlatFormSettings.replaceImageSingletonEntry(
+                PhysicalMemorySupportImpl.getPhysicalMemorySupportClass(),
+                new PhysicalMemorySupportImpl()
+            );
+            ImageSingletons.add(
+                VirtualMemoryProvider.class,
+                new EnclaveVirtualMemoryProvider()
+            );
         }
     }
 }

@@ -44,27 +44,43 @@
                                 <configuration>
                                     <imageName>libsvm_enclave_sdk</imageName>
                                     <buildArgs>
+                                        <buildArg>-H:NativeLinkerOption=${project.basedir}/../native/bin/platform/tee_sdk_svm/tee_sdk_wrapper.o</buildArg>
+                                        <buildArg>-H:NativeLinkerOption=${project.basedir}/../native/bin/platform/tee_sdk_svm/tee_sdk_enclave_t.o</buildArg>
+                                        <buildArg>-H:NativeLinkerOption=${project.basedir}/../native/bin/platform/tee_sdk_svm/sgx_mmap.o</buildArg>
+                                        <buildArg>-H:NativeLinkerOption=${project.basedir}/../native/bin/platform/tee_sdk_svm/tee_sdk_symbol.o</buildArg>
+                                        <buildArg>-H:NativeLinkerOption=-L/opt/teesdk/sgxsdk/lib64</buildArg>
+                                        <buildArg>-H:NativeLinkerOption=-Wl,--whole-archive</buildArg>
+                                        <buildArg>-H:NativeLinkerOption=-lsgx_trts</buildArg>
+                                        <buildArg>-H:NativeLinkerOption=-Wl,--no-whole-archive</buildArg>
+                                        <buildArg>-H:NativeLinkerOption=-Wl,--start-group</buildArg>
+                                        <buildArg>-H:NativeLinkerOption=-lsgx_tstdc</buildArg>
+                                        <buildArg>-H:NativeLinkerOption=-lsgx_tcxx</buildArg>
+                                        <buildArg>-H:NativeLinkerOption=-lsgx_pthread</buildArg>
+                                        <buildArg>-H:NativeLinkerOption=-lsgx_tcrypto</buildArg>
+                                        <buildArg>-H:NativeLinkerOption=-lsgx_tservice</buildArg>
+                                        <buildArg>-H:NativeLinkerOption=-Wl,--end-group</buildArg>
+                                        <buildArg>-H:NativeLinkerOption=-Wl,--allow-multiple-definition</buildArg>
+                                        <buildArg>-H:NativeLinkerOption=-Wl,--defsym,__ImageBase=0</buildArg>
                                         <buildArg>--shared</buildArg>
                                         <buildArg>--no-fallback</buildArg>
+                                        <buildArg>-march=native</buildArg>
+                                        <buildArg>--features=org.apache.teaclave.javasdk.enclave.EnclaveGlobalDataFeature,org.apache.teaclave.javasdk.enclave.EnclaveFeature,org.apache.teaclave.javasdk.enclave.system.EnclaveMemoryFeature,org.apache.teaclave.javasdk.enclave.cpufeatures.EnclaveAMD64CPUFeatureAccessFeature</buildArg>
                                         <buildArg>-H:+RunInEnclave</buildArg>
+                                        <buildArg>-H:+ReportExceptionStackTraces</buildArg>
                                         <buildArg>-H:Path=svm-output</buildArg>
                                     </buildArgs>
                                 </configuration>
                                 <phase>package</phase>
                             </execution>
-                            <execution>
-                                <id>test-native</id>
-                                <goals>
-                                    <goal>test</goal>
-                                </goals>
-                                <configuration>
-                                    <buildArgs>
-                                        <buildArg>--no-fallback</buildArg>
-                                        <buildArg>-H:+RunInEnclave</buildArg>
-                                    </buildArgs>
-                                </configuration>
-                                <phase>test</phase>
-                            </execution>
+                            <!-- test-native execution removed: Native tests should not link against
+                                 SGX enclave libraries (libsgx_pthread.a, libsgx_trts.a, etc.) because
+                                 tests run on the host, not inside an actual SGX enclave. This causes:
+                                 1. Multiple definition of pthread_self (SDK vs libsgx_pthread.a)
+                                 2. Missing __ImageBase symbol (enclave-specific)
+                                 3. Missing _mmap/_munmap (defined in posix_stubs.c for real enclave builds)
+
+                                 The NativeImageTest.java handles native test compilation separately
+                                 with appropriate settings for host execution. -->
                         </executions>
                     </plugin>
                 </plugins>

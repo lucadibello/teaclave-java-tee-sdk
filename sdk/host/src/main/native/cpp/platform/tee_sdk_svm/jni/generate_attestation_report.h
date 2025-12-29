@@ -46,8 +46,8 @@
 extern "C" {
 #endif
 
-quote3_error_t load_qe_signed_package();
-quote3_error_t unload_qe_signed_package();
+quote3_error_t load_qe_signed_package(void);
+quote3_error_t unload_qe_signed_package(void);
 
 #ifdef __cplusplus
 }

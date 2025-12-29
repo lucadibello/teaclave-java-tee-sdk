@@ -17,12 +17,11 @@
 
 package org.apache.teaclave.javasdk.enclave.cpufeatures;
 
-import com.oracle.svm.core.amd64.AMD64CPUFeatureAccess;
 import com.oracle.svm.core.Uninterruptible;
+import com.oracle.svm.core.amd64.AMD64CPUFeatureAccess;
+import java.util.EnumSet;
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.code.Architecture;
-
-import java.util.EnumSet;
 
 /**
  * Don't check CPU features in enclave environment because the native functions are not supported by enclave SDKs.
@@ -31,8 +30,19 @@ import java.util.EnumSet;
  * @since GraalVM 22.2.0
  */
 public class EnclaveAMD64CPUFeatureAccess extends AMD64CPUFeatureAccess {
-    public EnclaveAMD64CPUFeatureAccess(EnumSet<?> buildtimeCPUFeatures, int[] offsets, byte[] errorMessageBytes, byte[] buildtimeFeatureMaskBytes) {
-        super(buildtimeCPUFeatures, offsets, errorMessageBytes, buildtimeFeatureMaskBytes);
+
+    public EnclaveAMD64CPUFeatureAccess(
+        EnumSet<?> buildtimeCPUFeatures,
+        int[] offsets,
+        byte[] errorMessageBytes,
+        byte[] buildtimeFeatureMaskBytes
+    ) {
+        super(
+            buildtimeCPUFeatures,
+            offsets,
+            errorMessageBytes,
+            buildtimeFeatureMaskBytes
+        );
     }
 
     @Override
@@ -48,12 +58,8 @@ public class EnclaveAMD64CPUFeatureAccess extends AMD64CPUFeatureAccess {
 
     @Override
     @Uninterruptible(reason = "Thread state not set up yet.")
-    public void verifyHostSupportsArchitectureEarlyOrExit() {
-
-    }
+    public void verifyHostSupportsArchitectureEarlyOrExit() {}
 
     @Override
-    public void enableFeatures(Architecture runtimeArchitecture) {
-
-    }
+    public void enableFeatures(Architecture runtimeArchitecture) {}
 }

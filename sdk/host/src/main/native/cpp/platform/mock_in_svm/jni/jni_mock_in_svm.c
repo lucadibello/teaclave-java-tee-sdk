@@ -112,25 +112,25 @@ JavaEnclave_MockSVMNativeCreateEnclave(JNIEnv *env, jobject obj, jstring path) {
     void *enclave_handler = dlopen(path_str , RTLD_LOCAL | RTLD_LAZY);
     (*env)->ReleaseStringUTFChars(env, path, path_str);
     if (enclave_handler == 0x0) {
-        THROW_EXCEPTION(env, ENCLAVE_CREATING_EXCEPTION, "mock in svm dlopen error.")
+        THROW_EXCEPTION_INT(env, ENCLAVE_CREATING_EXCEPTION, "mock in svm dlopen error.");
     }
     // find load service symbol.
     mock_in_svm_load_service_symbol = dlsym((void *)enclave_handler, "java_loadservice_invoke");
     if (!mock_in_svm_load_service_symbol) {
         dlclose(enclave_handler);
-        THROW_EXCEPTION(env, ENCLAVE_CREATING_EXCEPTION, "java_loadservice_invoke error.")
+        THROW_EXCEPTION_INT(env, ENCLAVE_CREATING_EXCEPTION, "java_loadservice_invoke error.");
     }
     // find invoke service symbol.
     mock_in_svm_invoke_service_symbol = dlsym((void *)enclave_handler, "java_enclave_invoke");
     if (!mock_in_svm_invoke_service_symbol) {
         dlclose(enclave_handler);
-        THROW_EXCEPTION(env, ENCLAVE_CREATING_EXCEPTION, "mock_in_svm_invoke_service_symbol error.")
+        THROW_EXCEPTION_INT(env, ENCLAVE_CREATING_EXCEPTION, "mock_in_svm_invoke_service_symbol error.");
     }
     // find unload service symbol.
     mock_in_svm_unload_service_symbol = dlsym((void *)enclave_handler, "java_unloadservice_invoke");
     if (!mock_in_svm_unload_service_symbol) {
         dlclose(enclave_handler);
-        THROW_EXCEPTION(env, ENCLAVE_CREATING_EXCEPTION, "mock_in_svm_unload_service_symbol error.")
+        THROW_EXCEPTION_INT(env, ENCLAVE_CREATING_EXCEPTION, "mock_in_svm_unload_service_symbol error.");
     }
     // set enclave_handler back to MockInSvmEnclave.enclaveSvmSdkHandle field.
     jclass class_enclave = (*env)->GetObjectClass(env, obj);
@@ -146,18 +146,18 @@ JavaEnclave_MockSVMNativeSvmAttachIsolate(JNIEnv *env, jobject obj, jlong enclav
     int (*create_isolate_with_params)(int argc, char** parameters, graal_isolate_t** isolate, graal_isolatethread_t** thread);
     create_isolate_with_params = (int (*)(int, char**, graal_isolate_t**, graal_isolatethread_t**)) dlsym((void *)enclave_handler, "create_isolate_with_params");
     if (!create_isolate_with_params) {
-        THROW_EXCEPTION(env, ENCLAVE_CREATING_EXCEPTION, "create isolate dlsym error.")
+        THROW_EXCEPTION_INT(env, ENCLAVE_CREATING_EXCEPTION, "create isolate dlsym error.");
     }
 
-    char *args_str = (*env)->GetStringUTFChars(env, args, 0);
+    const char *args_str = (*env)->GetStringUTFChars(env, args, 0);
     int argc = 2;
     char* parameters[2];
     parameters[0] = NULL;
-    parameters[1] = args_str;
+    parameters[1] = (char *)args_str;
 
     if (create_isolate_with_params(argc, parameters, &isolate_t, &isolate_thread_t) != 0) {
         (*env)->ReleaseStringUTFChars(env, args, args_str);
-        THROW_EXCEPTION(env, ENCLAVE_CREATING_EXCEPTION, "graal_create_isolate create error.")
+        THROW_EXCEPTION_INT(env, ENCLAVE_CREATING_EXCEPTION, "graal_create_isolate create error.");
     }
 
     (*env)->ReleaseStringUTFChars(env, args, args_str);
@@ -172,7 +172,7 @@ JNIEXPORT jbyteArray JNICALL
 JavaEnclave_MockSVMNativeLoadService(JNIEnv *env, jobject obj, jlong enclave_handler, jlong isolate_handler, jbyteArray load_service_payload) {
     enclave_calling_stub_result result_wrapper =  mock_enclave_calling_entry(env, isolate_handler, load_service_payload, (mock_enclave_stub) mock_in_svm_load_service_symbol);
     if (result_wrapper.ret != 0) {
-        THROW_EXCEPTION(env, ENCLAVE_SERVICE_LOADING_EXCEPTION, "tee sdk service loading native call failed.")
+        THROW_EXCEPTION_PTR(env, ENCLAVE_SERVICE_LOADING_EXCEPTION, "tee sdk service loading native call failed.");
     }
     return result_wrapper.result;
 }
@@ -181,7 +181,7 @@ JNIEXPORT jbyteArray JNICALL
 JavaEnclave_MockSVMNativeInvokeMethod(JNIEnv *env, jobject obj, jlong enclave_handler, jlong isolate_handler, jbyteArray invoke_payload) {
     enclave_calling_stub_result result_wrapper = mock_enclave_calling_entry(env, isolate_handler, invoke_payload, (mock_enclave_stub) mock_in_svm_invoke_service_symbol);
     if (result_wrapper.ret != 0) {
-        THROW_EXCEPTION(env, ENCLAVE_SERVICE_INVOKING_EXCEPTION, "tee sdk service method invoking native call failed.")
+        THROW_EXCEPTION_PTR(env, ENCLAVE_SERVICE_INVOKING_EXCEPTION, "tee sdk service method invoking native call failed.");
     }
     return result_wrapper.result;
 }
@@ -190,7 +190,7 @@ JNIEXPORT jbyteArray JNICALL
 JavaEnclave_MockSVMNativeUnloadService(JNIEnv *env, jobject obj, jlong enclave_handler, jlong isolate_handler, jbyteArray unload_service_payload) {
     enclave_calling_stub_result result_wrapper = mock_enclave_calling_entry(env, isolate_handler, unload_service_payload, (mock_enclave_stub) mock_in_svm_unload_service_symbol);
     if (result_wrapper.ret != 0) {
-        THROW_EXCEPTION(env, ENCLAVE_SERVICE_UNLOADING_EXCEPTION, "tee sdk service unloading native call failed.")
+        THROW_EXCEPTION_PTR(env, ENCLAVE_SERVICE_UNLOADING_EXCEPTION, "tee sdk service unloading native call failed.");
     }
     return result_wrapper.result;
 }
@@ -201,10 +201,10 @@ JavaEnclave_MockSVMNativeSvmDetachIsolate(JNIEnv *env, jobject obj, jlong enclav
     graal_detach_all_threads_and_tear_down_isolate =
     (int (*)(graal_isolatethread_t*)) dlsym((void *)enclave_handler, "graal_detach_all_threads_and_tear_down_isolate");
     if (!graal_detach_all_threads_and_tear_down_isolate) {
-        THROW_EXCEPTION(env, ENCLAVE_DESTROYING_EXCEPTION, "graal_detach_all_threads_and_tear_down_isolate dlsym error.")
+        THROW_EXCEPTION_INT(env, ENCLAVE_DESTROYING_EXCEPTION, "graal_detach_all_threads_and_tear_down_isolate dlsym error.");
     }
     if (0x0 != graal_detach_all_threads_and_tear_down_isolate((graal_isolatethread_t*)isolate_thread_handler)) {
-        THROW_EXCEPTION(env, ENCLAVE_DESTROYING_EXCEPTION, "graal_detach_all_threads_and_tear_down_isolate error.")
+        THROW_EXCEPTION_INT(env, ENCLAVE_DESTROYING_EXCEPTION, "graal_detach_all_threads_and_tear_down_isolate error.");
     }
     return 0;
 }
@@ -212,7 +212,7 @@ JavaEnclave_MockSVMNativeSvmDetachIsolate(JNIEnv *env, jobject obj, jlong enclav
 JNIEXPORT jint JNICALL
 JavaEnclave_MockSVMNativeDestroyEnclave(JNIEnv *env, jobject obj, jlong enclave_handler) {
     if(0x0 != dlclose((void *)enclave_handler)) {
-        THROW_EXCEPTION(env, ENCLAVE_DESTROYING_EXCEPTION, "dlclose failed.")
+        THROW_EXCEPTION_INT(env, ENCLAVE_DESTROYING_EXCEPTION, "dlclose failed.");
     }
     return 0;
 }

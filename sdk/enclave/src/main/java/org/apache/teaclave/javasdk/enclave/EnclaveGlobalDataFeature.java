@@ -17,10 +17,8 @@
 
 package org.apache.teaclave.javasdk.enclave;
 
-import com.oracle.svm.core.annotate.AutomaticFeature;
-import org.graalvm.nativeimage.ImageSingletons;
 import org.graalvm.nativeimage.hosted.Feature;
-import org.graalvm.nativeimage.impl.RuntimeClassInitializationSupport;
+import org.graalvm.nativeimage.hosted.RuntimeClassInitialization;
 
 /**
  * Feature that ensures EnclaveGlobalData is properly initialized at build time.
@@ -31,15 +29,10 @@ import org.graalvm.nativeimage.impl.RuntimeClassInitializationSupport;
  * call CGlobalDataFactory methods and the resulting CGlobalData values become constants
  * in the image.
  */
-@AutomaticFeature
 public class EnclaveGlobalDataFeature implements Feature {
 
     @Override
-    public void afterRegistration(AfterRegistrationAccess access) {
-        // Ensure EnclaveGlobalData is initialized at build time so its static fields
-        // are populated with CGlobalData values created by CGlobalDataFactory
-        RuntimeClassInitializationSupport rci = ImageSingletons.lookup(RuntimeClassInitializationSupport.class);
-        rci.initializeAtBuildTime("org.apache.teaclave.javasdk.enclave.EnclaveGlobalData",
-                "EnclaveGlobalData holds CGlobalData fields that must be initialized at build time");
+    public void beforeAnalysis(BeforeAnalysisAccess access) {
+        RuntimeClassInitialization.initializeAtBuildTime("org.apache.teaclave.javasdk.enclave.EnclaveGlobalData");
     }
 }

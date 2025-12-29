@@ -116,6 +116,8 @@ size_t __getdelim(char **lineptr, size_t *n, int delim, FILE *stream) {
     return (size_t)getdelim(lineptr, n, delim, stream);
 }
 
+/* Use weak attribute so that libsgx_pthread.a's implementation takes precedence when linked */
+__attribute__((weak))
 unsigned long int pthread_self(void) {
     TRACE_SYMBOL_CALL();
     return (unsigned long int)get_thread_data();

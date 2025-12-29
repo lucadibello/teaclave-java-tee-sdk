@@ -41,6 +41,7 @@ FILE *stderr = NULL;
 
 int printf(const char *format, ...) { return 0; }
 int fprintf(FILE *stream, const char *format, ...) { return 0; }
+int puts(const char *s) { return 0; }
 
 // Actual sprintf might be needed? Safe to return 0 for now.
 int sprintf(char *str, const char *format, ...) { return 0; }
@@ -55,7 +56,7 @@ char *fgets(char *s, int size, FILE *stream) { return NULL; }
 FILE *fopen(const char *pathname, const char *mode) { errno = ENOENT; return NULL; }
 FILE *fdopen(int fd, const char *mode) { errno = ENOENT; return NULL; }
 int fclose(FILE *stream) { return 0; }
-ssize_t getdelim(char **lineptr, size_t *n, int delimiter, FILE *stream) { return -1; }
+// Note: getdelim is defined in tee_sdk_symbol.c
 
 // File System
 int open(const char *pathname, int flags, ...) { errno = ENOENT; return -1; }
@@ -129,6 +130,9 @@ pid_t getpid(void) { return 1; }
 uid_t getuid(void) { return 0; }
 int gettimeofday(struct timeval *tv, void *tz) { return -1; }
 int clock_gettime(clockid_t clk_id, struct timespec *tp) { return -1; }
+time_t time(time_t *tloc) { return (time_t)-1; }
+struct tm *localtime_r(const time_t *timep, struct tm *result) { return NULL; }
+struct tm *gmtime_r(const time_t *timep, struct tm *result) { return NULL; }
 long sysconf(int name) { return -1; }
 void exit(int status) { while(1); }
 // void abort(void) { while(1); }
@@ -159,16 +163,10 @@ int getgrgid_r(gid_t gid, struct group *grp, char *buf, size_t buflen, struct gr
 // void *dlsym(void *handle, const char *symbol) { return NULL; }
 // int dlclose(void *handle) { return 0; }
 // char *dlerror(void) { return "Not supported"; }
+int dladdr(const void *addr, Dl_info *info) { return 0; }
 
-// Signal
-// typedef void (*sighandler_t)(int);
-// sighandler_t signal(int signum, sighandler_t handler) { return SIG_ERR; }
-
-// Env
-char *getenv(const char *name) { return NULL; }
-
-// Syscall
-long syscall(long number, ...) { errno = ENOSYS; return -1; }
+// Pthread
+int pthread_condattr_destroy(void *attr) { return 0; }
 
 // Missing Symbols for SGX SDK / GraalVM
 void *_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
