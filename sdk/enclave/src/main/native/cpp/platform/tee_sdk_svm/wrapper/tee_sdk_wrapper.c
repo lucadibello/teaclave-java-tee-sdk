@@ -56,14 +56,22 @@ int enclave_svm_isolate_create(void* isolate, void* isolateThread, int flag, cha
     graal_isolate_t* isolate_t = NULL;
     graal_isolatethread_t* thread_t = NULL;
 
+    printf("[ENCLAVE DEBUG] enclave_svm_isolate_create: entering, flag=%d\n", flag);
+
     // Implicitly set graal_create_isolate_params_t param as NULL.
     enable_trace_symbol_calling = flag;
 
+    printf("[ENCLAVE DEBUG] calling graal_create_isolate...\n");
+    
     // Try the standard graal_create_isolate first (simpler, no arg parsing issues)
     int ret = graal_create_isolate(NULL, &isolate_t, &thread_t);
 
+    printf("[ENCLAVE DEBUG] graal_create_isolate returned: ret=%d, isolate_t=%p, thread_t=%p\n", 
+           ret, (void*)isolate_t, (void*)thread_t);
+
     if (ret != 0 || isolate_t == NULL || thread_t == NULL) {
         // Fallback to create_isolate_with_params
+        printf("[ENCLAVE DEBUG] first attempt failed, trying create_isolate_with_params...\n");
         isolate_t = NULL;
         thread_t = NULL;
         int argc = 2;
@@ -71,10 +79,13 @@ int enclave_svm_isolate_create(void* isolate, void* isolateThread, int flag, cha
         parameters[0] = NULL;
         parameters[1] = args;
         ret = create_isolate_with_params(argc, parameters, &isolate_t, &thread_t);
+        printf("[ENCLAVE DEBUG] create_isolate_with_params returned: ret=%d, isolate_t=%p, thread_t=%p\n", 
+               ret, (void*)isolate_t, (void*)thread_t);
     }
 
     *(uint64_t*)isolate = (uint64_t)isolate_t;
     *(uint64_t*)isolateThread = (uint64_t)thread_t;
+    printf("[ENCLAVE DEBUG] enclave_svm_isolate_create: returning ret=%d\n", ret);
     return ret;
 }
 
