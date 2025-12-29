@@ -23,7 +23,7 @@ import org.apache.teaclave.javasdk.common.exception.ConfidentialComputingExcepti
 import org.apache.teaclave.javasdk.enclave.framework.LoadServiceInvoker;
 import org.apache.teaclave.javasdk.enclave.framework.ServiceMethodInvoker;
 import org.apache.teaclave.javasdk.enclave.framework.UnloadServiceInvoker;
-// Feature is registered via META-INF/services/org.graalvm.nativeimage.hosted.Feature
+import com.oracle.svm.core.annotate.AutomaticFeature;
 import com.oracle.svm.core.c.libc.TemporaryBuildDirectoryProvider;
 import com.oracle.svm.core.jdk.resources.NativeImageResourceFileSystemUtil;
 import com.oracle.svm.core.util.VMError;
@@ -31,9 +31,7 @@ import com.oracle.svm.hosted.FeatureHandler;
 import com.oracle.svm.hosted.FeatureImpl;
 import com.oracle.svm.hosted.ImageClassLoader;
 import com.oracle.svm.hosted.NativeImageGenerator;
-import com.oracle.svm.hosted.ServiceLoaderFeature;
-import com.oracle.svm.hosted.reflect.ReflectionFeature;
-import com.oracle.svm.hosted.reflect.serialize.SerializationFeature;
+
 import org.graalvm.nativeimage.ImageSingletons;
 import org.graalvm.nativeimage.hosted.Feature;
 import org.graalvm.nativeimage.hosted.RuntimeReflection;
@@ -61,6 +59,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+@AutomaticFeature
 public class EnclaveFeature implements Feature {
 
     private ImageClassLoader imageClassLoader;
@@ -68,10 +67,9 @@ public class EnclaveFeature implements Feature {
     private final Map<Class<?>, Boolean> reflectionCandidateTypes = new HashMap<>();
     private final Map<Method, Boolean> reflectionCandidateMethods = new HashMap<>();
 
-    @Override
-    public List<Class<? extends Feature>> getRequiredFeatures() {
-        return Arrays.asList(ReflectionFeature.class, SerializationFeature.class, ServiceLoaderFeature.class);
-    }
+    // Note: In GraalVM 22.2.0, this method declared dependencies on ReflectionFeature, SerializationFeature,
+    // and ServiceLoaderFeature. In GraalVM 23.0+, these classes are not accessible due to module restrictions
+    // and are automatically loaded anyway, so this method is no longer needed.
 
     /**
      * {@code com.oracle.svm.core.cpufeature.RuntimeCPUFeatureCheckFeature} is introduced since GraalVM 22.1.0. It is not
