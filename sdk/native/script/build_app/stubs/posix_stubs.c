@@ -190,3 +190,24 @@ int uname(struct utsname *buf) {
 void rewind(FILE *stream) { }
 int ferror(FILE *stream) { return 0; }
 int feof(FILE *stream) { return 0; }
+
+// Environment variables (not available in SGX enclave)
+char *getenv(const char *name) {
+    return NULL;
+}
+
+int setenv(const char *name, const char *value, int overwrite) {
+    errno = ENOSYS;
+    return -1;
+}
+
+int unsetenv(const char *name) {
+    errno = ENOSYS;
+    return -1;
+}
+
+// System calls (not available in SGX enclave)
+long syscall(long number, ...) {
+    errno = ENOSYS;
+    return -1;
+}
