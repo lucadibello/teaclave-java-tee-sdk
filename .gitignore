@@ -4,6 +4,9 @@
 # Log file
 *.log
 
+# Compiled objects / libraries
+*.so
+*.o
 
 # virtual machine crash logs
 hs_err_pid*

@@ -23,17 +23,34 @@ import com.oracle.svm.core.c.CGlobalDataFactory;
 import com.oracle.svm.core.c.function.CEntryPointActions;
 import com.oracle.svm.core.c.function.CEntryPointOptions;
 import org.graalvm.nativeimage.Isolate;
+import org.graalvm.nativeimage.IsolateThread;
 import org.graalvm.nativeimage.c.type.CCharPointer;
+import org.graalvm.word.WordFactory;
 
 public class EnclavePrologue implements CEntryPointOptions.Prologue {
     private static final CGlobalData<CCharPointer> errorMessage = CGlobalDataFactory.createCString("Failed to enter (or attach to) the global isolate in the current thread.");
+    private static final CGlobalData<CCharPointer> poolExhaustedMessage = CGlobalDataFactory.createCString("IsolateThread pool exhausted: no free slots available for ECALL.");
 
     @Uninterruptible(reason = "prologue")
     static void enter(Isolate isolate) {
-
-        int code = CEntryPointActions.enterAttachThread(isolate, true);
-        if (code != 0) {
-            CEntryPointActions.failFatally(code, errorMessage.get());
+        if (IsolateThreadPool.isInitialized()) {
+            // Claim a free IsolateThread from the C-side lock-free pool.
+            long threadHandle = NativePool.claim();
+            if (threadHandle == 0L) {
+                CEntryPointActions.failFatally(1, poolExhaustedMessage.get());
+            }
+            IsolateThread slot = WordFactory.pointer(threadHandle);
+            int code = CEntryPointActions.enter(slot);
+            if (code != 0) {
+                NativePool.release(threadHandle);
+                CEntryPointActions.failFatally(code, errorMessage.get());
+            }
+        } else {
+            // Legacy mode: no pool initialized, use original enterAttachThread behavior
+            int code = CEntryPointActions.enterAttachThread(isolate, true);
+            if (code != 0) {
+                CEntryPointActions.failFatally(code, errorMessage.get());
+            }
         }
     }
 }

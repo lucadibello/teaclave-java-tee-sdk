@@ -32,6 +32,12 @@ int java_enclave_invoke(graal_isolate_t* thread, enc_data_t* input, enc_data_t* 
 
 int java_unloadservice_invoke(graal_isolate_t* thread, enc_data_t* input, enc_data_t* result, callbacks_t* callBacks);
 
+int java_init_thread_pool(graal_isolate_t* isolate, int count, void* handles, long buf_size);
+
+int java_attach_helper_thread(graal_isolate_t* isolate, void* handle_out);
+
+int java_detach_helper_thread(graal_isolatethread_t* thread);
+
 #if defined(__cplusplus)
 }
 #endif

@@ -115,6 +115,20 @@ JNIEXPORT jint JNICALL JavaEnclave_TeeSDKSVMNativeDestroyEnclave(JNIEnv *, jobje
  */
 JNIEXPORT jobject JNICALL JavaEnclave_TeeSDK_REMOTE_ATTESTATION_REPORT(JNIEnv *, jobject, jlong, jbyteArray);
 
+/*
+ * Class:     org_apache_teaclave_javasdk_host_TeeSdkEnclave
+ * Method:    nativePreallocateThreads
+ * Signature: (JJI)I
+ */
+JNIEXPORT jint JNICALL JavaEnclave_TeeSDKSVMNativePreallocateThreads(JNIEnv *, jobject, jlong, jlong, jint);
+
+/*
+ * Class:     org_apache_teaclave_javasdk_host_TeeSdkEnclave
+ * Method:    nativeReleasePoolThreads
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL JavaEnclave_TeeSDKSVMNativeReleasePoolThreads(JNIEnv *, jobject, jlong);
+
 #ifdef __cplusplus
 }
 #endif

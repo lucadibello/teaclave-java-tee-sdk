@@ -86,6 +86,21 @@ final class TeeSdkEnclave extends AbstractEnclave {
         try {
             // Create svm attach isolate and isolateThread, and they are set in jni in nativeHandlerContext.
             nativeSvmAttachIsolate(enclaveHandle, TeeSdkEnclaveConfigure.getInstance().isEnableTeeSDKSymbolTracing(), buildSVMHeapConf());
+            // Pre-allocate IsolateThread pool for multi-thread support.
+            // Each pool slot requires a parked helper pthread that holds a TCS slot.
+            // ECALL threads also need TCS slots to enter the enclave. So pool size
+            // must be less than enclave_max_thread to leave headroom for ECALL entry
+            // threads and any internal Java threads (Thread.start() inside enclave).
+            // Formula: pool_size = (max_threads - reserve) / 2
+            //   - pool_size helpers hold pool_size TCS slots (parked)
+            //   - pool_size ECALL threads can concurrently use pool_size TCS slots
+            //   - reserve TCS slots for internal threads + init thread
+            int maxThreads = TeeSdkEnclaveConfigure.getInstance().getMaxEnclaveThreadNum();
+            int reserve = 4; // headroom for init thread + internal Java threads
+            int threadPoolSize = Math.max(0, (maxThreads - reserve) / 2);
+            if (threadPoolSize > 0) {
+                nativePreallocateThreads(enclaveHandle, isolateHandle, threadPoolSize);
+            }
             // Create enclave info.
             boolean isDebuggable = mode.getValue() != 0x2;
             enclaveInfo = new SGXEnclaveInfo(
@@ -115,6 +130,10 @@ final class TeeSdkEnclave extends AbstractEnclave {
     private native int nativeSvmDetachIsolate(long enclaveHandler, long isolateThreadHandler) throws EnclaveDestroyingException;
 
     private native int nativeDestroyEnclave(long enclaveHandler) throws EnclaveDestroyingException;
+
+    private native int nativePreallocateThreads(long enclaveHandler, long isolateHandler, int threadCount) throws EnclaveCreatingException;
+
+    private native void nativeReleasePoolThreads(long enclaveHandler);
 
     static int verifyAttestationReport(byte[] quote) throws RemoteAttestationException {
         return SGXRemoteAttestationVerify.VerifyAttestationReport(quote);
@@ -172,6 +191,9 @@ final class TeeSdkEnclave extends AbstractEnclave {
                     MetricTraceContext.LogPrefix.METRIC_LOG_ENCLAVE_DESTROYING_PATTERN)) {
                 // interrupt enclave services' recycler firstly.
                 this.getEnclaveContext().getEnclaveServicesRecycler().interruptServiceRecycler();
+                // Release pool helper threads so they exit and their IsolateThreads
+                // can be cleaned up during isolate teardown.
+                nativeReleasePoolThreads(enclaveHandle);
                 // destroy svm isolate.
                 nativeSvmDetachIsolate(enclaveHandle, isolateThreadHandle);
                 // destroy the enclave.

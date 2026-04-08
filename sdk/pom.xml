@@ -78,8 +78,8 @@
         <url>https://github.com/apache/incubator-teaclave-java-tee-sdk/issues</url>
     </issueManagement>
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <org.apache.teaclave.javasdk.platform>MOCK_IN_SVM:TEE_SDK</org.apache.teaclave.javasdk.platform>
         <surefire.version>3.0.0-M5</surefire.version>
@@ -92,6 +92,20 @@
                 <artifactId>commons-compress</artifactId>
                 <version>1.26.0</version>
             </dependency>
+            <!-- Source: https://mvnrepository.com/artifact/org.graalvm.sdk/graal-sdk -->
+            <dependency>
+                <groupId>org.graalvm.sdk</groupId>
+                <artifactId>graal-sdk</artifactId>
+                <version>22.2.0.1</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.graalvm.nativeimage</groupId>
+                <artifactId>svm</artifactId>
+                <version>24.2.0.1</version>
+                <scope>provided</scope>
+            </dependency>
+
             <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>

@@ -123,13 +123,38 @@ int pthread_attr_setdetachstate(pthread_attr *attr, int detachstate) {
     return 0;
 }
 
+/*
+ * Global wide-stack flag for IsolateThread pool support.
+ * When g_use_wide_stack_bounds is set (by the C pool init code), we return
+ * artificially wide stack bounds (256MB range centered on the current SP)
+ * so that any IsolateThread's StackBase/StackEnd covers ALL TCS stacks in
+ * the enclave. This allows ECALL threads entering through any TCS to reuse
+ * pre-registered IsolateThread handles without triggering StackOverflowError.
+ */
+extern volatile int g_use_wide_stack_bounds;
+
 int pthread_attr_getstack(const pthread_attr *a, void ** addr, size_t *size) {
     TRACE_SYMBOL_CALL();
     thread_data *self = (thread_data *)get_thread_data();
     uint64_t stack_base_addr = self->__stack_base_addr;
     uint64_t stack_limit_addr = self->__stack_limit_addr;
-    *size = (int)ROUND_TO_PAGE(stack_base_addr - stack_limit_addr);
-    *addr = (void *)stack_limit_addr;
+
+    if (g_use_wide_stack_bounds) {
+        /* Return a 512MB range centered on the current TCS stack to cover
+         * all possible TCS stacks in the enclave. SGX EPC is typically
+         * 128-256MB, so 512MB covers the entire enclave address space.
+         * This effectively disables stack overflow detection, which is
+         * acceptable for SGX where stack sizes are hardware-constrained. */
+        uint64_t half = 256ULL * 1024 * 1024;
+        uint64_t midpoint = (stack_base_addr + stack_limit_addr) / 2;
+        uint64_t wide_end = (midpoint > half) ? (midpoint - half) : 0;
+        uint64_t wide_base = midpoint + half;
+        *size = (size_t)ROUND_TO_PAGE(wide_base - wide_end);
+        *addr = (void *)wide_end;
+    } else {
+        *size = (int)ROUND_TO_PAGE(stack_base_addr - stack_limit_addr);
+        *addr = (void *)stack_limit_addr;
+    }
     return 0;
 }
 

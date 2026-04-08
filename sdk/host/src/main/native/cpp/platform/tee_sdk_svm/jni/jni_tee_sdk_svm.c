@@ -42,6 +42,8 @@ static JNINativeMethod tee_sdk_svm_methods[] = {
     {"nativeSvmDetachIsolate",          "(JJ)I",                                     (void *)&JavaEnclave_TeeSDKSVMNativeSvmDetachIsolate},
     {"nativeDestroyEnclave",            "(J)I",                                      (void *)&JavaEnclave_TeeSDKSVMNativeDestroyEnclave},
     {"nativeGenerateAttestationReport", TEE_SDK_REMOTE_ATTESTATION_REPORT_SIGNATURE, (void *)&JavaEnclave_TeeSDK_REMOTE_ATTESTATION_REPORT},
+    {"nativePreallocateThreads",        "(JJI)I",                                    (void *)&JavaEnclave_TeeSDKSVMNativePreallocateThreads},
+    {"nativeReleasePoolThreads",        "(J)V",                                      (void *)&JavaEnclave_TeeSDKSVMNativeReleasePoolThreads},
 };
 
 JNIEXPORT void JNICALL
@@ -191,6 +193,22 @@ JavaEnclave_TeeSDKSVMNativeDestroyEnclave(JNIEnv *env, jobject obj, jlong enclav
         THROW_EXCEPTION(env, ENCLAVE_DESTROYING_EXCEPTION, "enclave destroy native call failed.")
     }
     return 0;
+}
+
+JNIEXPORT jint JNICALL
+JavaEnclave_TeeSDKSVMNativePreallocateThreads(JNIEnv *env, jobject obj, jlong enclave_handler, jlong isolate_handler, jint thread_count) {
+    int ret = 0;
+    enclave_svm_preallocate_threads((sgx_enclave_id_t)enclave_handler, &ret,
+        (uint64_t)isolate_handler, (int)thread_count);
+    if (ret != 0) {
+        THROW_EXCEPTION(env, ENCLAVE_CREATING_EXCEPTION, "pre-allocate IsolateThread pool failed.")
+    }
+    return ret;
+}
+
+JNIEXPORT void JNICALL
+JavaEnclave_TeeSDKSVMNativeReleasePoolThreads(JNIEnv *env, jobject obj, jlong enclave_handler) {
+    enclave_svm_release_pool_threads((sgx_enclave_id_t)enclave_handler);
 }
 
 JNIEXPORT jobject JNICALL
