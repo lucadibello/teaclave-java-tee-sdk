@@ -86,21 +86,12 @@ final class TeeSdkEnclave extends AbstractEnclave {
         try {
             // Create svm attach isolate and isolateThread, and they are set in jni in nativeHandlerContext.
             nativeSvmAttachIsolate(enclaveHandle, TeeSdkEnclaveConfigure.getInstance().isEnableTeeSDKSymbolTracing(), buildSVMHeapConf());
-            // Pre-allocate IsolateThread pool for multi-thread support.
-            // Each pool slot requires a parked helper pthread that holds a TCS slot.
-            // ECALL threads also need TCS slots to enter the enclave. So pool size
-            // must be less than enclave_max_thread to leave headroom for ECALL entry
-            // threads and any internal Java threads (Thread.start() inside enclave).
-            // Formula: pool_size = (max_threads - reserve) / 2
-            //   - pool_size helpers hold pool_size TCS slots (parked)
-            //   - pool_size ECALL threads can concurrently use pool_size TCS slots
-            //   - reserve TCS slots for internal threads + init thread
-            int maxThreads = TeeSdkEnclaveConfigure.getInstance().getMaxEnclaveThreadNum();
-            int reserve = 4; // headroom for init thread + internal Java threads
-            int threadPoolSize = Math.max(0, (maxThreads - reserve) / 2);
-            if (threadPoolSize > 0) {
-                nativePreallocateThreads(enclaveHandle, isolateHandle, threadPoolSize);
-            }
+            // Initialize per-TCS IsolateThread cache mode.
+            // Sets wide stack bounds and the TCS cache initialized flag in the enclave.
+            // No helper pthreads are spawned — IsolateThreads are created lazily by
+            // ECALL threads on first entry and cached per TCS for reuse.
+            // The thread_count parameter is unused but kept for API compatibility.
+            nativePreallocateThreads(enclaveHandle, isolateHandle, 2);
             // Create enclave info.
             boolean isDebuggable = mode.getValue() != 0x2;
             enclaveInfo = new SGXEnclaveInfo(

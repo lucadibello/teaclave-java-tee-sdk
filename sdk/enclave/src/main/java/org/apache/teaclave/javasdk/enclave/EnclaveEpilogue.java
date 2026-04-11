@@ -20,26 +20,18 @@ package org.apache.teaclave.javasdk.enclave;
 import com.oracle.svm.core.annotate.Uninterruptible;
 import com.oracle.svm.core.c.function.CEntryPointActions;
 import com.oracle.svm.core.c.function.CEntryPointOptions;
-import org.graalvm.nativeimage.CurrentIsolate;
-import org.graalvm.nativeimage.IsolateThread;
 
 /**
- * Custom ECALL epilogue that releases the claimed IsolateThread back to the
- * C-side lock-free pool after leaving the isolate context.
+ * Custom ECALL epilogue that transitions the IsolateThread to STATUS_IN_NATIVE.
+ * The IsolateThread stays cached in the per-TCS cache for reuse on next ECALL
+ * from the same TCS.
  */
 public class EnclaveEpilogue implements CEntryPointOptions.Epilogue {
 
     @Uninterruptible(reason = "epilogue")
     static void leave() {
-        if (IsolateThreadPool.isInitialized()) {
-            // Capture the IsolateThread handle before leave() clears it
-            IsolateThread current = CurrentIsolate.getCurrentThread();
-            long handle = current.rawValue();
-            CEntryPointActions.leave();
-            NativePool.release(handle);
-        } else {
-            // Pool not initialized — fall back to default behavior
-            CEntryPointActions.leave();
-        }
+        // Just transition to STATUS_IN_NATIVE. The IsolateThread stays cached
+        // in the per-TCS cache for reuse on next ECALL from the same TCS.
+        CEntryPointActions.leave();
     }
 }

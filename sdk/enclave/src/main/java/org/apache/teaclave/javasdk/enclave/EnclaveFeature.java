@@ -95,10 +95,10 @@ public class EnclaveFeature implements Feature {
         ImageSingletons.add(UnloadServiceInvoker.class, new UnloadServiceInvoker());
         ImageSingletons.lookup(RuntimeClassInitializationSupport.class).initializeAtBuildTime("org.apache.teaclave.javasdk.enclave.EnclavePrologue",
                 "Prologue class should be initialize at build time.");
-        ImageSingletons.lookup(RuntimeClassInitializationSupport.class).initializeAtBuildTime("org.apache.teaclave.javasdk.enclave.IsolateThreadPool",
-                "IsolateThreadPool uses CGlobalData which must be initialized at build time.");
         ImageSingletons.lookup(RuntimeClassInitializationSupport.class).initializeAtBuildTime("org.apache.teaclave.javasdk.enclave.EnclaveEpilogue",
                 "EnclaveEpilogue is used in @CEntryPointOptions and must be initialized at build time.");
+        ImageSingletons.lookup(RuntimeClassInitializationSupport.class).initializeAtBuildTime("org.apache.teaclave.javasdk.enclave.NativeTcsCache",
+                "NativeTcsCache is used from @Uninterruptible prologue/epilogue code and must be initialized at build time.");
 
         FeatureImpl.DuringSetupAccessImpl config = (FeatureImpl.DuringSetupAccessImpl) access;
         RuntimeSerialization.register(ConfidentialComputingException.class, RuntimeException.class,

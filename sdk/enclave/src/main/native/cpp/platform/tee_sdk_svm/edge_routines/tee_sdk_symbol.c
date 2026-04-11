@@ -133,6 +133,13 @@ int pthread_attr_setdetachstate(pthread_attr *attr, int detachstate) {
  */
 extern volatile int g_use_wide_stack_bounds;
 
+/* Enclave log tag — defined here because tee_sdk_symbol.o is linked
+   independently from tee_sdk_wrapper.o in some build configurations.
+   Set by enclave_svm_preallocate_threads() in tee_sdk_wrapper.c. */
+char g_pool_tag[16] = "";
+
+#define POOL_LOG(fmt, ...) printf("[pool:%s] " fmt, g_pool_tag, ##__VA_ARGS__)
+
 int pthread_attr_getstack(const pthread_attr *a, void ** addr, size_t *size) {
     TRACE_SYMBOL_CALL();
     thread_data *self = (thread_data *)get_thread_data();
@@ -140,20 +147,35 @@ int pthread_attr_getstack(const pthread_attr *a, void ** addr, size_t *size) {
     uint64_t stack_limit_addr = self->__stack_limit_addr;
 
     if (g_use_wide_stack_bounds) {
-        /* Return a 512MB range centered on the current TCS stack to cover
-         * all possible TCS stacks in the enclave. SGX EPC is typically
-         * 128-256MB, so 512MB covers the entire enclave address space.
-         * This effectively disables stack overflow detection, which is
-         * acceptable for SGX where stack sizes are hardware-constrained. */
-        uint64_t half = 256ULL * 1024 * 1024;
-        uint64_t midpoint = (stack_base_addr + stack_limit_addr) / 2;
-        uint64_t wide_end = (midpoint > half) ? (midpoint - half) : 0;
-        uint64_t wide_base = midpoint + half;
-        *size = (size_t)ROUND_TO_PAGE(wide_base - wide_end);
-        *addr = (void *)wide_end;
+        /* Return bounds covering the entire user-space address range so that
+         * any IsolateThread's StackBase/StackEnd is valid for any TCS stack.
+         *
+         * We set addr = SE_PAGE_SIZE (one page above null, avoids null-pointer
+         * edge cases) and size = a large value covering all of user space.
+         * StackOverflowCheckImpl computes:
+         *   stackBase = addr + size          (high end)
+         *   stackEnd  = addr + guardSize     (low end, guardSize = 1 from shim)
+         *   stackBoundaryTL = stackEnd + yellowZone + redZone  (~40KB above addr)
+         *
+         * With addr = 4096:
+         *   stackEnd  = 4096 + 1 = 4097
+         *   stackBoundaryTL = 4097 + ~40KB = ~45KB
+         *
+         * Any ECALL thread's SP (in the range 0x7f....) will always be above
+         * ~45KB, so the stack overflow check always passes. Stack overflow
+         * detection is effectively disabled, which is safe for SGX where TCS
+         * stacks are hardware-constrained to the enclave's configured size. */
+        *addr = (void *)(uintptr_t)SE_PAGE_SIZE;
+        *size = (size_t)(0x7FFFFFFFFFFFULL - SE_PAGE_SIZE);
+        POOL_LOG("pthread_attr_getstack: WIDE bounds — addr=%p size=0x%lx"
+               " (real: base=0x%lx limit=0x%lx)\n",
+               *addr, *size, stack_base_addr, stack_limit_addr);
     } else {
         *size = (int)ROUND_TO_PAGE(stack_base_addr - stack_limit_addr);
         *addr = (void *)stack_limit_addr;
+        POOL_LOG("pthread_attr_getstack: REAL bounds — addr=%p size=0x%lx"
+               " (base=0x%lx limit=0x%lx)\n",
+               *addr, *size, stack_base_addr, stack_limit_addr);
     }
     return 0;
 }
