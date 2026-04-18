@@ -17,9 +17,8 @@
 
 package org.apache.teaclave.javasdk.enclave.substitutes;
 
-import org.apache.teaclave.javasdk.enclave.EnclaveEntry;
 import org.apache.teaclave.javasdk.enclave.EnclaveOptions;
-import org.apache.teaclave.javasdk.enclave.c.EnclaveEnvironment;
+import org.apache.teaclave.javasdk.enclave.NativeEnclaveRandom;
 import com.oracle.svm.core.annotate.Alias;
 import com.oracle.svm.core.annotate.Substitute;
 import com.oracle.svm.core.annotate.TargetClass;
@@ -106,22 +105,29 @@ public final class NativePRNGSubstitutions {
             nextBuffer = new byte[bufferSize];
         }
 
+        /*
+         * Fetch entropy directly from sgx_read_rand (RDRAND) inside the enclave.
+         *
+         * The upstream implementation routed through callbacks_t.get_random_number,
+         * a host-shaped function pointer reached via EnclaveEntry.getCallBackMethods().
+         * Under concurrent ECALLs that path is hostile to GraalVM's safepoint model:
+         * it requires a per-TCS callbacks lookup on every entropy fetch and historically
+         * exposed the calling thread to a safepoint window (see MULTITHREADING.md section 1.2).
+         * NativeEnclaveRandom.readRand calls sgx_read_rand entirely inside the enclave -
+         * no OCALL, no callbacks indirection, no safepoint hazard.
+         */
         @Substitute
         private static void readFully(InputStream in, byte[] data) {
             int len = data.length;
-            EnclaveEnvironment.NativeGetRandomNumberFunctionPointer nativeGetRandomNumberFunctionPointer = EnclaveEntry.getCallBackMethods().getRandomNumber();
-            if (nativeGetRandomNumberFunctionPointer.isNonNull()) {
-                CCharPointer bytes = UnmanagedMemory.malloc(len);
-                int ret = nativeGetRandomNumberFunctionPointer.invoke((VoidPointer) bytes, len);
-                if (ret == 0) {
-                    CTypeConversion.asByteBuffer(bytes, len).get(data);
-                    UnmanagedMemory.free(bytes);
-                } else {
-                    UnmanagedMemory.free(bytes);
-                    throw new RuntimeException("Fail to call the native random method in Enclave. Error code:" + ret);
+            CCharPointer bytes = UnmanagedMemory.malloc(len);
+            try {
+                int ret = NativeEnclaveRandom.readRand((VoidPointer) bytes, len);
+                if (ret != 0) {
+                    throw new RuntimeException("sgx_read_rand failed inside enclave. sgx_status_t=" + ret);
                 }
-            } else {
-                throw new RuntimeException("Callback function to oe_random is not set.");
+                CTypeConversion.asByteBuffer(bytes, len).get(data);
+            } finally {
+                UnmanagedMemory.free(bytes);
             }
         }
     }

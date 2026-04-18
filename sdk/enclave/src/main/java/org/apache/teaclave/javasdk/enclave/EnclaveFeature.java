@@ -99,6 +99,8 @@ public class EnclaveFeature implements Feature {
                 "EnclaveEpilogue is used in @CEntryPointOptions and must be initialized at build time.");
         ImageSingletons.lookup(RuntimeClassInitializationSupport.class).initializeAtBuildTime("org.apache.teaclave.javasdk.enclave.NativeTcsCache",
                 "NativeTcsCache is used from @Uninterruptible prologue/epilogue code and must be initialized at build time.");
+        ImageSingletons.lookup(RuntimeClassInitializationSupport.class).initializeAtBuildTime("org.apache.teaclave.javasdk.enclave.NativeEnclaveRandom",
+                "NativeEnclaveRandom holds an @CFunction declaration and must be initialized at build time.");
 
         FeatureImpl.DuringSetupAccessImpl config = (FeatureImpl.DuringSetupAccessImpl) access;
         RuntimeSerialization.register(ConfidentialComputingException.class, RuntimeException.class,

@@ -51,6 +51,26 @@ int tee_sdk_random(void* data, long size) {
     return (int)sgx_read_rand(data, (size_t)size);
 }
 
+/*
+ * In-enclave entropy fetch for NativePRNGSubstitutions.readFully().
+ *
+ * Called via @CFunction(NO_TRANSITION) directly from Java, bypassing
+ * the callbacks_t.get_random_number indirection. This matters under
+ * concurrent ECALLs: dispatching through callbacks_t requires a
+ * per-TCS callbacks lookup AND historically left the calling thread
+ * exposed to a safepoint window via the host-facing function pointer
+ * shape. sgx_read_rand runs entirely inside the enclave (RDRAND),
+ * so there is no OCALL and no safepoint hazard.
+ *
+ * Returns 0 on success (SGX_SUCCESS), non-zero sgx_status_t otherwise.
+ */
+int tee_sdk_enclave_read_rand(void* data, int size) {
+    if (data == NULL || size <= 0) {
+        return -1;
+    }
+    return (int)sgx_read_rand((unsigned char*)data, (size_t)size);
+}
+
 int enclave_svm_isolate_create(void* isolate, void* isolateThread, int flag, char* args) {
     graal_isolate_t* isolate_t;
     graal_isolatethread_t* thread_t;
