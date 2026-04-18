@@ -50,5 +50,11 @@ enclave {
 
         // get target info from host.
         quote3_error_t ocall_get_target_info([out] sgx_target_info_t *qe_target_info);
+
+        // Return calling OS thread identifier (host pthread_self()). Used by the
+        // per-TCS IsolateThread cache to detect when a TCS slot has been recycled
+        // by a different host OS thread, so the cached IsolateThread can be
+        // invalidated and replaced rather than silently reused.
+        uint64_t ocall_host_thread_id();
     };
 };

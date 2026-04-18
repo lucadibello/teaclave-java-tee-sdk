@@ -16,6 +16,7 @@
 // under the License.
 
 #include "ocall_svm.h"
+#include <pthread.h>
 
 int ocall_getrlimit(int resource, void *rlim) {
     return getrlimit(resource, (struct rlimit *)rlim);
@@ -28,4 +29,8 @@ int ocall_malloc(size_t size, void *ptr) {
         return 0;
     }
     return -1;
+}
+
+uint64_t ocall_host_thread_id() {
+    return (uint64_t)pthread_self();
 }

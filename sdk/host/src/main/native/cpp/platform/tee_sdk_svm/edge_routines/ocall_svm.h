@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #if defined(__cplusplus)
 extern "C"
@@ -30,6 +31,7 @@ extern "C"
 #endif
     int ocall_getrlimit(int resource, void *rlim);
     int ocall_malloc(size_t size, void *ptr);
+    uint64_t ocall_host_thread_id();
 #if defined(__cplusplus)
 }
 #endif
