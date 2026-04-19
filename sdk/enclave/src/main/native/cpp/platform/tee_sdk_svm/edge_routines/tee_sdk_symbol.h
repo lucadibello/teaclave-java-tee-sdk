@@ -100,6 +100,26 @@ size_t __getdelim(char **lineptr, size_t *n, int delim, FILE *stream);
 
 unsigned long int pthread_self();
 
+/*
+ * pthread_create / pthread_join are provided by libsgx_pthread (linked via
+ * TS_ENCLAVE_LDFLAGS). They spawn a real in-enclave thread via an OCALL that
+ * causes the untrusted runtime (libsgx_urts' pthread_create_ocall) to create
+ * a host OS worker thread; that worker then re-enters the enclave through a
+ * dedicated TCS to execute start_routine. This gives true in-enclave
+ * parallelism while respecting the SGX hardware model: the scheduler lives
+ * on the host, but every instruction of start_routine runs inside the
+ * enclave's measured address space.
+ *
+ * Earlier versions of this SDK shimmed pthread_create to run start_routine
+ * synchronously on the caller's TCS to avoid GraalVM IsolateThread zombies.
+ * That workaround has been replaced: the prologue's per-TCS cache +
+ * host-thread-id re-keying (see tee_sdk_wrapper.c) ensures every ECALL and
+ * every in-enclave thread gets a correctly scoped IsolateThread, so
+ * Substrate VM's normal Thread.start() path (PosixJavaThreads ->
+ * pthread_create -> pthreadStartRoutine -> enterAttachThread) now works
+ * correctly and can be left untouched.
+ */
+
 typedef struct _thread_data {
     uint64_t self_addr;
     uint64_t __reserved_0;

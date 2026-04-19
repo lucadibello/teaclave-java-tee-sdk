@@ -108,8 +108,19 @@ unsigned long int pthread_self(void) {
     return (unsigned long int)get_thread_data();
 }
 
+#define POOL_LOG(fmt, ...) printf("[pool] " fmt, ##__VA_ARGS__)
+
+/* Worker lifecycle counters. Non-static so wrapper can print them at destroy time. */
+volatile long g_pt_created = 0;
+volatile long g_pt_destroyed = 0;
+volatile long g_pt_getstack = 0;
+
 int pthread_attr_init(pthread_attr *attr) {
     TRACE_SYMBOL_CALL();
+    long n = __sync_add_and_fetch(&g_pt_created, 1);
+    POOL_LOG("pthread_attr_init#%ld created=%ld destroyed=%ld in_flight=%ld\n",
+             n, g_pt_created, g_pt_destroyed,
+             g_pt_created - g_pt_destroyed);
     return 0;
 }
 
@@ -124,59 +135,21 @@ int pthread_attr_setdetachstate(pthread_attr *attr, int detachstate) {
 }
 
 /*
- * Global wide-stack flag for IsolateThread pool support.
- * When g_use_wide_stack_bounds is set (by the C pool init code), we return
- * artificially wide stack bounds (256MB range centered on the current SP)
- * so that any IsolateThread's StackBase/StackEnd covers ALL TCS stacks in
- * the enclave. This allows ECALL threads entering through any TCS to reuse
- * pre-registered IsolateThread handles without triggering StackOverflowError.
+ * Return the real TCS stack bounds for the calling thread.
  */
-extern volatile int g_use_wide_stack_bounds;
-
-/* Enclave log tag — defined here because tee_sdk_symbol.o is linked
-   independently from tee_sdk_wrapper.o in some build configurations.
-   Set by enclave_svm_preallocate_threads() in tee_sdk_wrapper.c. */
-char g_pool_tag[16] = "";
-
-#define POOL_LOG(fmt, ...) printf("[pool:%s] " fmt, g_pool_tag, ##__VA_ARGS__)
-
 int pthread_attr_getstack(const pthread_attr *a, void ** addr, size_t *size) {
     TRACE_SYMBOL_CALL();
     thread_data *self = (thread_data *)get_thread_data();
     uint64_t stack_base_addr = self->__stack_base_addr;
     uint64_t stack_limit_addr = self->__stack_limit_addr;
 
-    if (g_use_wide_stack_bounds) {
-        /* Return bounds covering the entire user-space address range so that
-         * any IsolateThread's StackBase/StackEnd is valid for any TCS stack.
-         *
-         * We set addr = SE_PAGE_SIZE (one page above null, avoids null-pointer
-         * edge cases) and size = a large value covering all of user space.
-         * StackOverflowCheckImpl computes:
-         *   stackBase = addr + size          (high end)
-         *   stackEnd  = addr + guardSize     (low end, guardSize = 1 from shim)
-         *   stackBoundaryTL = stackEnd + yellowZone + redZone  (~40KB above addr)
-         *
-         * With addr = 4096:
-         *   stackEnd  = 4096 + 1 = 4097
-         *   stackBoundaryTL = 4097 + ~40KB = ~45KB
-         *
-         * Any ECALL thread's SP (in the range 0x7f....) will always be above
-         * ~45KB, so the stack overflow check always passes. Stack overflow
-         * detection is effectively disabled, which is safe for SGX where TCS
-         * stacks are hardware-constrained to the enclave's configured size. */
-        *addr = (void *)(uintptr_t)SE_PAGE_SIZE;
-        *size = (size_t)(0x7FFFFFFFFFFFULL - SE_PAGE_SIZE);
-        POOL_LOG("pthread_attr_getstack: WIDE bounds — addr=%p size=0x%lx"
-               " (real: base=0x%lx limit=0x%lx)\n",
-               *addr, *size, stack_base_addr, stack_limit_addr);
-    } else {
-        *size = (int)ROUND_TO_PAGE(stack_base_addr - stack_limit_addr);
-        *addr = (void *)stack_limit_addr;
-        POOL_LOG("pthread_attr_getstack: REAL bounds — addr=%p size=0x%lx"
-               " (base=0x%lx limit=0x%lx)\n",
-               *addr, *size, stack_base_addr, stack_limit_addr);
-    }
+    *size = (int)ROUND_TO_PAGE(stack_base_addr - stack_limit_addr);
+    *addr = (void *)stack_limit_addr;
+    long n = __sync_add_and_fetch(&g_pt_getstack, 1);
+    POOL_LOG("pthread_attr_getstack#%ld tcs_self=%p"
+             " created=%ld destroyed=%ld in_flight=%ld\n",
+             n, (void*)self, g_pt_created, g_pt_destroyed,
+             g_pt_created - g_pt_destroyed);
     return 0;
 }
 
@@ -225,6 +198,12 @@ int pthread_attr_setstacksize() {
 
 int pthread_attr_destroy() {
     TRACE_SYMBOL_CALL();
+    long n = __sync_add_and_fetch(&g_pt_destroyed, 1);
+    thread_data *self = (thread_data *)get_thread_data();
+    POOL_LOG("pthread_attr_destroy#%ld tcs_self=%p created=%ld destroyed=%ld"
+             " in_flight=%ld\n",
+             n, (void*)self, g_pt_created, g_pt_destroyed,
+             g_pt_created - g_pt_destroyed);
     return 0;
 }
 

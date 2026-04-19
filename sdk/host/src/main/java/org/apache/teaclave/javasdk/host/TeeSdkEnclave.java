@@ -86,11 +86,13 @@ final class TeeSdkEnclave extends AbstractEnclave {
         try {
             // Create svm attach isolate and isolateThread, and they are set in jni in nativeHandlerContext.
             nativeSvmAttachIsolate(enclaveHandle, TeeSdkEnclaveConfigure.getInstance().isEnableTeeSDKSymbolTracing(), buildSVMHeapConf());
+            
             // Initialize per-TCS IsolateThread cache mode.
             // Sets wide stack bounds and the TCS cache initialized flag in the enclave.
-            // No helper pthreads are spawned — IsolateThreads are created lazily by
+            // No helper pthreads are spawned - IsolateThreads are created lazily by
             // ECALL threads on first entry and cached per TCS for reuse.
             // The thread_count parameter is unused but kept for API compatibility.
+            // FIXME: this must be removed!
             nativePreallocateThreads(enclaveHandle, isolateHandle, 2);
             // Create enclave info.
             boolean isDebuggable = mode.getValue() != 0x2;

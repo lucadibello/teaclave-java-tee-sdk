@@ -34,7 +34,9 @@ public class EnclavePrologue implements CEntryPointOptions.Prologue {
     @Uninterruptible(reason = "prologue")
     static void enter(Isolate isolate) {
         if (NativeTcsCache.isInitialized() != 0) {
-            // TCS cache mode: look up cached IsolateThread for this TCS
+            // TCS cache mode: look up cached IsolateThread for this (TCS, host-thread) pair.
+            // A mismatched host-thread id (TCS slot recycled by a different OS thread) is
+            // treated as a miss by the C side, which evicts the stale entry before returning 0.
             long cached = NativeTcsCache.lookup();
             if (cached != 0L) {
                 // Fast path: reuse existing IsolateThread (same OS thread, safe)
@@ -44,12 +46,13 @@ public class EnclavePrologue implements CEntryPointOptions.Prologue {
                     CEntryPointActions.failFatally(code, errorMessage.get());
                 }
             } else {
-                // Slow path: first ECALL on this TCS, create new IsolateThread
+                // Slow path: first ECALL on this (TCS, host-thread) pair - attach a fresh
+                // IsolateThread and try to cache it. If the cache is full the ECALL still
+                // proceeds correctly; only future ECALLs from this pair skip the fast path.
                 int code = CEntryPointActions.enterAttachThread(isolate, true);
                 if (code != 0) {
                     CEntryPointActions.failFatally(code, errorMessage.get());
                 }
-                // Cache the newly created IsolateThread for future ECALLs from this TCS
                 IsolateThread current = CurrentIsolate.getCurrentThread();
                 NativeTcsCache.register(current.rawValue());
             }

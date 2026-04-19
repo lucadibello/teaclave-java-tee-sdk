@@ -36,29 +36,46 @@ import org.graalvm.word.PointerBase;
  * and from normal Java code.
  */
 final class NativeTcsCache {
+
     private NativeTcsCache() {}
 
     /** Look up the cached IsolateThread for the calling TCS. Returns handle or 0. */
-    @CFunction(value = "tee_sdk_tcs_lookup", transition = CFunction.Transition.NO_TRANSITION)
+    @CFunction(
+        value = "tee_sdk_tcs_lookup",
+        transition = CFunction.Transition.NO_TRANSITION
+    )
     static native long lookup();
 
-    /** Register a newly created IsolateThread for the calling TCS. */
-    @CFunction(value = "tee_sdk_tcs_register", transition = CFunction.Transition.NO_TRANSITION)
-    static native void register(long isolateThread);
+    /**
+     * Register a newly created IsolateThread for the calling (TCS, host-thread)
+     * pair. Returns non-zero on success, 0 if the cache is full (in this case, the caller should
+     * fall back to the legacy uncached path since the IsolateThread still works,
+     * just without the fast-path cache reuse on next ECALLs).
+     */
+    @CFunction(
+        value = "tee_sdk_tcs_register",
+        transition = CFunction.Transition.NO_TRANSITION
+    )
+    static native int register(long isolateThread);
 
     /** Check if TCS cache mode is active. Returns non-zero if initialized. */
-    @CFunction(value = "tee_sdk_tcs_is_initialized", transition = CFunction.Transition.NO_TRANSITION)
+    @CFunction(
+        value = "tee_sdk_tcs_is_initialized",
+        transition = CFunction.Transition.NO_TRANSITION
+    )
     static native int isInitialized();
 
     /** Store the CallBacks pointer for the calling TCS. */
-    @CFunction(value = "tee_sdk_tcs_set_callbacks", transition = CFunction.Transition.NO_TRANSITION)
+    @CFunction(
+        value = "tee_sdk_tcs_set_callbacks",
+        transition = CFunction.Transition.NO_TRANSITION
+    )
     static native void setCallbacks(PointerBase callbacks);
 
     /** Retrieve the CallBacks pointer for the calling TCS. */
-    @CFunction(value = "tee_sdk_tcs_get_callbacks", transition = CFunction.Transition.NO_TRANSITION)
+    @CFunction(
+        value = "tee_sdk_tcs_get_callbacks",
+        transition = CFunction.Transition.NO_TRANSITION
+    )
     static native PointerBase getCallbacks();
-
-    /** Debug logging — write a C string to stdout with pool tag prefix. */
-    @CFunction(value = "tee_sdk_pool_log", transition = CFunction.Transition.NO_TRANSITION)
-    static native void log(CCharPointer msg);
 }
