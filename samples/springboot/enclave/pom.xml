@@ -85,11 +85,6 @@
                                 <phase>package</phase>
                             </execution>
                         </executions>
-                        <configuration>
-                            <agent>
-                                <enabled>true</enabled>
-                            </agent>
-                        </configuration>
                     </plugin>
                     <plugin>
                         <artifactId>exec-maven-plugin</artifactId>
