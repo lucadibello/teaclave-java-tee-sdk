@@ -10,9 +10,6 @@ mvn install:install-file \
     -Dpackaging=jar \
     -Dfile="${GRAALVM_HOME}/lib/graal/graal-processor.jar"
 
-# Remove stale cached artifacts to force reinstall from source
-rm -rf ~/.m2/repository/org/apache/teaclave
-rm -rf /root/.m2/repository/org/apache/teaclave
 
 # Build TeaClave SDK (requires GraalVM as JAVA_HOME for org.graalvm.compiler.* packages)
 export JAVA_HOME="${GRAALVM_HOME}"; \
