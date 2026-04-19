@@ -117,17 +117,17 @@ JNIEXPORT jobject JNICALL JavaEnclave_TeeSDK_REMOTE_ATTESTATION_REPORT(JNIEnv *,
 
 /*
  * Class:     org_apache_teaclave_javasdk_host_TeeSdkEnclave
- * Method:    nativePreallocateThreads
+ * Method:    nativeInitializeThreadCache
  * Signature: (JJI)I
  */
-JNIEXPORT jint JNICALL JavaEnclave_TeeSDKSVMNativePreallocateThreads(JNIEnv *, jobject, jlong, jlong, jint);
+JNIEXPORT jint JNICALL JavaEnclave_TeeSDKSVMnativeInitializeThreadCache(JNIEnv *, jobject, jlong, jlong, jint);
 
 /*
  * Class:     org_apache_teaclave_javasdk_host_TeeSdkEnclave
- * Method:    nativeReleasePoolThreads
+ * Method:    nativeReleaseThreadCache
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL JavaEnclave_TeeSDKSVMNativeReleasePoolThreads(JNIEnv *, jobject, jlong);
+JNIEXPORT void JNICALL JavaEnclave_TeeSDKSVMnativeReleaseThreadCache(JNIEnv *, jobject, jlong);
 
 #ifdef __cplusplus
 }

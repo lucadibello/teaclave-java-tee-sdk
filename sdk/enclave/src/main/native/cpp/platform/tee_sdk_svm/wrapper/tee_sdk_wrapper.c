@@ -417,7 +417,7 @@ void* tee_sdk_tcs_get_callbacks(void) {
 /*
  * Initialize TCS cache mode.
  */
-int enclave_svm_preallocate_threads(uint64_t isolate, int thread_count) {
+int enclave_svm_initialize_thread_cache(uint64_t isolate, int thread_count) {
     (void)isolate;
     (void)thread_count;
 
@@ -438,7 +438,7 @@ int enclave_svm_preallocate_threads(uint64_t isolate, int thread_count) {
   *
   * NOTE: called from Java via @CFunction(NO_TRANSITION) to avoid safepoint hazards
   */
-void enclave_svm_release_pool_threads(void) {
+void enclave_svm_release_thread_cache(void) {
     int count = g_tcs_cache_count;
     if (count > MAX_TCS_CACHE) count = MAX_TCS_CACHE;
 

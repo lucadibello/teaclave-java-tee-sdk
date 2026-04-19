@@ -37,9 +37,9 @@ enclave {
         // generate sgx enclave remote attestation report;
         public int generate_remote_attestation_report([in, size=hash_length] void* hash,  size_t hash_length, [out]sgx_report_t* ra_report);
         // pre-allocate IsolateThread pool for multi-thread support;
-        public int enclave_svm_preallocate_threads(uint64_t isolate, int thread_count);
+        public int enclave_svm_initialize_thread_cache(uint64_t isolate, int thread_count);
         // release pool helper threads before isolate teardown;
-        public void enclave_svm_release_pool_threads();
+        public void enclave_svm_release_thread_cache();
     };
 
     untrusted {
