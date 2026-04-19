@@ -24,29 +24,33 @@ import org.apache.teaclave.javasdk.test.common.AESSealedTest;
 import org.apache.teaclave.javasdk.test.common.AESService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Timeout(
+        value = 300,
+        unit = TimeUnit.SECONDS,
+        threadMode = Timeout.ThreadMode.SEPARATE_THREAD
+)
 public class TestEnclaveAES {
     @BeforeEach
-    public final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
+    final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
 
     @AfterEach
-    public final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
+    final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
 
-    @Test
-    public void testAESService() throws Exception {
+    @ParameterizedTest
+    @EnumSource(value = EnclaveType.class, mode = EnumSource.Mode.EXCLUDE, names = {"NONE", "EMBEDDED_LIB_OS"})
+    void testAESService(EnclaveType type) throws Exception {
         String plaintext = "Hello World!!!";
-        EnclaveType[] types = new EnclaveType[]{
-                EnclaveType.MOCK_IN_JVM,
-                EnclaveType.MOCK_IN_SVM,
-                EnclaveType.TEE_SDK};
-
-        for (EnclaveType type : types) {
-            Enclave enclave = EnclaveFactory.create(type);
+        Enclave enclave = EnclaveFactory.create(type);
+        try {
             assertNotNull(enclave);
             Iterator<AESService> userServices = enclave.load(AESService.class);
             assertNotNull(userServices);
@@ -58,6 +62,7 @@ public class TestEnclaveAES {
             assertEquals(plaintext, result);
             AESSealedTest obj = new AESSealedTest("javaenclave", 25, 5);
             assertEquals(0, obj.compareTo((AESSealedTest) service.aesEncryptAndDecryptObject(obj)));
+        } finally {
             enclave.destroy();
         }
     }

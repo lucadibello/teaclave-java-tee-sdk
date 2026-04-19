@@ -21,6 +21,7 @@ import org.apache.teaclave.javasdk.host.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import javax.management.MBeanServer;
 import javax.management.MBeanServerConnection;
@@ -33,9 +34,15 @@ import java.lang.management.ManagementFactory;
 import java.net.ServerSocket;
 import java.rmi.registry.LocateRegistry;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Timeout(
+        value = 300,
+        unit = TimeUnit.SECONDS,
+        threadMode = Timeout.ThreadMode.SEPARATE_THREAD
+)
 public class TestEnclaveInfoMXBean {
     private static final String DOMAIN_NAME = "EnclaveMXBean";
     private static final String ENCLAVE_MX_BEAN_STUB = "enclaveInfoMXBeanStub";
@@ -98,13 +105,13 @@ public class TestEnclaveInfoMXBean {
     }
 
     @BeforeEach
-    public final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
+    final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
 
     @AfterEach
-    public final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
+    final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
 
     @Test
-    public void testEnclaveInfo() throws Exception {
+    void testEnclaveInfo() throws Exception {
         Thread serviceThread = new Thread(() -> {
             try {
                 service();

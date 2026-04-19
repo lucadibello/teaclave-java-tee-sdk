@@ -23,15 +23,23 @@ import org.apache.teaclave.javasdk.host.EnclaveType;
 import org.apache.teaclave.javasdk.test.common.SHAService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Timeout(
+        value = 300,
+        unit = TimeUnit.SECONDS,
+        threadMode = Timeout.ThreadMode.SEPARATE_THREAD
+)
 public class TestEnclaveSHA {
     private String encryptSHA(String plaintext, String SHAType) throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance(SHAType);
@@ -45,21 +53,17 @@ public class TestEnclaveSHA {
     }
 
     @BeforeEach
-    public final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
+    final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
 
     @AfterEach
-    public final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
+    final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
 
-    @Test
-    public void testEnclaveSHA() throws Exception {
+    @ParameterizedTest
+    @EnumSource(value = EnclaveType.class, mode = EnumSource.Mode.EXCLUDE, names = {"NONE", "EMBEDDED_LIB_OS"})
+    void testEnclaveSHA(EnclaveType type) throws Exception {
         String plaintext = "Hello World!!!";
-        EnclaveType[] types = new EnclaveType[]{
-                EnclaveType.MOCK_IN_JVM,
-                EnclaveType.MOCK_IN_SVM,
-                EnclaveType.TEE_SDK};
-
-        for (EnclaveType type : types) {
-            Enclave enclave = EnclaveFactory.create(type);
+        Enclave enclave = EnclaveFactory.create(type);
+        try {
             assertNotNull(enclave);
             Iterator<SHAService> userServices = enclave.load(SHAService.class);
             assertNotNull(userServices);
@@ -69,6 +73,7 @@ public class TestEnclaveSHA {
             assertEquals(encryptSHA(plaintext, "SHA-384"), result);
             result = service.encryptPlaintext(plaintext, "SHA-512");
             assertEquals(encryptSHA(plaintext, "SHA-512"), result);
+        } finally {
             enclave.destroy();
         }
     }

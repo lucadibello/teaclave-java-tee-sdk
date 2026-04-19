@@ -26,38 +26,42 @@ import org.apache.teaclave.javasdk.host.exception.ServicesLoadingException;
 import org.apache.teaclave.javasdk.test.common.ReflectionCallService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@Timeout(
+        value = 300,
+        unit = TimeUnit.SECONDS,
+        threadMode = Timeout.ThreadMode.SEPARATE_THREAD
+)
 public class TestEnclaveReflection {
 
-    private void reflectionCallService(EnclaveType type) throws EnclaveCreatingException, ServicesLoadingException, EnclaveDestroyingException {
-        Enclave enclave = EnclaveFactory.create(type);
-        assertNotNull(enclave);
-        Iterator<ReflectionCallService> userServices = enclave.load(ReflectionCallService.class);
-        assertNotNull(userServices);
-        assertTrue(userServices.hasNext());
-        ReflectionCallService service = userServices.next();
-        assertEquals(20, service.add(2, 18));
-        assertEquals(-20, service.sub(2, 22));
-        enclave.destroy();
-    }
-
     @BeforeEach
-    public final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
+    final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
 
     @AfterEach
-    public final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
+    final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
 
-    @Test
-    public void testReflectionCallService() throws Exception {
-        reflectionCallService(EnclaveType.MOCK_IN_JVM);
-        reflectionCallService(EnclaveType.MOCK_IN_SVM);
-        reflectionCallService(EnclaveType.TEE_SDK);
-        // reflectionCallService(EnclaveType.EMBEDDED_LIB_OS);
+    @ParameterizedTest
+    @EnumSource(value = EnclaveType.class, mode = EnumSource.Mode.EXCLUDE, names = {"NONE", "EMBEDDED_LIB_OS"})
+    void testReflectionCallService(EnclaveType type) throws Exception {
+        Enclave enclave = EnclaveFactory.create(type);
+        try {
+            assertNotNull(enclave);
+            Iterator<ReflectionCallService> userServices = enclave.load(ReflectionCallService.class);
+            assertNotNull(userServices);
+            assertTrue(userServices.hasNext());
+            ReflectionCallService service = userServices.next();
+            assertEquals(20, service.add(2, 18));
+            assertEquals(-20, service.sub(2, 22));
+        } finally {
+            enclave.destroy();
+        }
     }
 }

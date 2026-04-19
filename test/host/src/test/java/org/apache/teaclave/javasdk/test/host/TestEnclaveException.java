@@ -27,35 +27,41 @@ import org.apache.teaclave.javasdk.test.common.EnclaveException;
 import org.apache.teaclave.javasdk.test.common.JavaEnclaveException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Timeout(
+        value = 300,
+        unit = TimeUnit.SECONDS,
+        threadMode = Timeout.ThreadMode.SEPARATE_THREAD
+)
 public class TestEnclaveException {
 
-    private void javaEnclaveException(EnclaveType type) throws EnclaveCreatingException, ServicesLoadingException, EnclaveDestroyingException {
-        Enclave enclave = EnclaveFactory.create(type);
-        assertNotNull(enclave);
-        Iterator<EnclaveException> userServices = enclave.load(EnclaveException.class);
-        assertNotNull(userServices);
-        assertTrue(userServices.hasNext());
-        EnclaveException service = userServices.next();
-        assertThrows(JavaEnclaveException.class, () -> service.enclaveException("Teaclave Java TEE SDK Exception"));
-        enclave.destroy();
-    }
-
     @BeforeEach
-    public final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
+    final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
 
     @AfterEach
-    public final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
+    final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
 
-    @Test
-    public void testJavaEnclaveException() throws Exception {
-        javaEnclaveException(EnclaveType.MOCK_IN_JVM);
-        javaEnclaveException(EnclaveType.MOCK_IN_SVM);
-        javaEnclaveException(EnclaveType.TEE_SDK);
+    @ParameterizedTest
+    @EnumSource(value = EnclaveType.class, mode = EnumSource.Mode.EXCLUDE, names = {"NONE", "EMBEDDED_LIB_OS"})
+    void testJavaEnclaveException(EnclaveType type) throws Exception {
+        Enclave enclave = EnclaveFactory.create(type);
+        try {
+            assertNotNull(enclave);
+            Iterator<EnclaveException> userServices = enclave.load(EnclaveException.class);
+            assertNotNull(userServices);
+            assertTrue(userServices.hasNext());
+            EnclaveException service = userServices.next();
+            assertThrows(JavaEnclaveException.class, () -> service.enclaveException("Teaclave Java TEE SDK Exception"));
+        } finally {
+            enclave.destroy();
+        }
     }
 }

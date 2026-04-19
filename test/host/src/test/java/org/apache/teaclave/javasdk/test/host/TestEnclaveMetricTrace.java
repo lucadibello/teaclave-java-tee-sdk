@@ -22,20 +22,30 @@ import org.apache.teaclave.javasdk.host.EnclaveFactory;
 import org.apache.teaclave.javasdk.host.EnclaveType;
 import org.apache.teaclave.javasdk.host.MetricTrace;
 import org.apache.teaclave.javasdk.test.common.MetricTraceService;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Timeout(
+        value = 300,
+        unit = TimeUnit.SECONDS,
+        threadMode = Timeout.ThreadMode.SEPARATE_THREAD
+)
 public class TestEnclaveMetricTrace {
-    private String invertCharacter(String str) {
+    private static String invertCharacter(String str) {
         byte[] content = new byte[str.length()];
         byte[] initial = str.getBytes();
         for (int i = 0x0; i < initial.length; i++) {
@@ -45,32 +55,19 @@ public class TestEnclaveMetricTrace {
     }
 
     @BeforeEach
-    public final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
+    final void before() {
+        System.out.println("enter test case: " + this.getClass().getName());
+        MetricTrace.setEnclaveMetricTraceSwitch(true);
+    }
 
     @AfterEach
-    public final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
+    final void after() {
+        System.out.println("exit test case: " + this.getClass().getName());
+    }
 
-    @Test
-    public void testEnclaveMetricTrace() throws Exception {
-        MetricTrace.setEnclaveMetricTraceSwitch(true);
-        String plaintext = "ABC_DEF_GHI_JKL_MNO_PQR_STU_VWX_YZ";
-        EnclaveType[] types = new EnclaveType[] {
-                EnclaveType.MOCK_IN_JVM,
-                EnclaveType.MOCK_IN_SVM,
-                EnclaveType.TEE_SDK};
-        for (EnclaveType type : types) {
-            Enclave enclave = EnclaveFactory.create(type);
-            assertNotNull(enclave);
-            Iterator<MetricTraceService> userServices = enclave.load(MetricTraceService.class);
-            assertNotNull(userServices);
-            assertTrue(userServices.hasNext());
-            MetricTraceService service = userServices.next();
-            String result = service.invertCharacter(plaintext);
-            assertEquals(result, invertCharacter(plaintext));
-            enclave.destroy();
-        }
+    @AfterAll
+    static void verifyLog() throws Exception {
         MetricTrace.setEnclaveMetricTraceSwitch(false);
-
         Field flog = MetricTrace.class.getDeclaredField("logPath");
         flog.setAccessible(true);
         String logPath = (String) flog.get(null);
@@ -85,7 +82,24 @@ public class TestEnclaveMetricTrace {
         assertTrue(str.contains("enclave_destroying_cost"));
         assertTrue(str.contains("enclave_service_loading"));
         assertTrue(str.contains("TEE_SDK"));
-        // assertTrue(str.contains("EMBEDDED_LIB_OS"));
         assertTrue(file.delete());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = EnclaveType.class, mode = EnumSource.Mode.EXCLUDE, names = {"NONE", "EMBEDDED_LIB_OS"})
+    void testEnclaveMetricTrace(EnclaveType type) throws Exception {
+        String plaintext = "ABC_DEF_GHI_JKL_MNO_PQR_STU_VWX_YZ";
+        Enclave enclave = EnclaveFactory.create(type);
+        try {
+            assertNotNull(enclave);
+            Iterator<MetricTraceService> userServices = enclave.load(MetricTraceService.class);
+            assertNotNull(userServices);
+            assertTrue(userServices.hasNext());
+            MetricTraceService service = userServices.next();
+            String result = service.invertCharacter(plaintext);
+            assertEquals(result, invertCharacter(plaintext));
+        } finally {
+            enclave.destroy();
+        }
     }
 }

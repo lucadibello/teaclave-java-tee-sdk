@@ -23,17 +23,33 @@ import org.apache.teaclave.javasdk.host.exception.EnclaveDestroyingException;
 import org.apache.teaclave.javasdk.host.exception.RemoteAttestationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Timeout(
+        value = 300,
+        unit = TimeUnit.SECONDS,
+        threadMode = Timeout.ThreadMode.SEPARATE_THREAD
+)
 public class TestRemoteAttestation {
 
-    private void remoteAttestation(EnclaveType type) throws EnclaveCreatingException, RemoteAttestationException, EnclaveDestroyingException {
+    @BeforeEach
+    final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
+
+    @AfterEach
+    final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
+
+    @ParameterizedTest
+    @EnumSource(value = EnclaveType.class, names = {"TEE_SDK"})
+    void testRemoteAttestation(EnclaveType type) throws Exception {
+        Enclave enclave = EnclaveFactory.create(type);
         try {
-            Enclave enclave = EnclaveFactory.create(type);
             assertNotNull(enclave);
             byte[] userData = new byte[64];
             new Random().nextBytes(userData);
@@ -46,22 +62,8 @@ public class TestRemoteAttestation {
             assertNotNull(report.getMeasurementSigner());
             assertNotNull(report.getUserData());
             assertArrayEquals(userData, report.getUserData());
+        } finally {
             enclave.destroy();
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-
-    }
-
-    @BeforeEach
-    public final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
-
-    @AfterEach
-    public final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
-
-    @Test
-    public void testRemoteAttestation() throws Exception {
-        remoteAttestation(EnclaveType.TEE_SDK);
-        // remoteAttestation(EnclaveType.EMBEDDED_LIB_OS);
     }
 }

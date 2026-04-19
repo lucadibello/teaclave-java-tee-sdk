@@ -26,39 +26,44 @@ import org.apache.teaclave.javasdk.host.exception.ServicesLoadingException;
 import org.apache.teaclave.javasdk.test.common.SayHelloService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Timeout(
+        value = 300,
+        unit = TimeUnit.SECONDS,
+        threadMode = Timeout.ThreadMode.SEPARATE_THREAD
+)
 public class TestHelloWorld {
 
-    private String sayHelloService(EnclaveType type, String plain) throws
-            EnclaveCreatingException, ServicesLoadingException, EnclaveDestroyingException {
-        Enclave enclave = EnclaveFactory.create(type);
-        assertNotNull(enclave);
-        Iterator<SayHelloService> userServices = enclave.load(SayHelloService.class);
-        assertNotNull(userServices);
-        assertTrue(userServices.hasNext());
-        SayHelloService service = userServices.next();
-        String result = service.sayHelloService(plain);
-        assertEquals("Hello World", service.sayHelloWorld());
-        enclave.destroy();
-        return result;
-    }
-
     @BeforeEach
-    public final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
+    final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
 
     @AfterEach
-    public final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
+    final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
 
-    @Test
-    public void testSayHelloService() throws Exception {
-        assertEquals("Hello World", sayHelloService(EnclaveType.MOCK_IN_JVM, "Hello World"));
-        assertEquals("Hello World", sayHelloService(EnclaveType.MOCK_IN_SVM, "Hello World"));
-        assertEquals("Hello World", sayHelloService(EnclaveType.TEE_SDK, "Hello World"));
-        // assertEquals("Hello World", sayHelloService(EnclaveType.EMBEDDED_LIB_OS, "Hello World"));
+    @ParameterizedTest
+    @EnumSource(value = EnclaveType.class, mode = EnumSource.Mode.EXCLUDE, names = {"NONE", "EMBEDDED_LIB_OS"})
+    void testSayHelloService(EnclaveType type) throws Exception {
+        String plain = "Hello World";
+        Enclave enclave = EnclaveFactory.create(type);
+        try {
+            assertNotNull(enclave);
+            Iterator<SayHelloService> userServices = enclave.load(SayHelloService.class);
+            assertNotNull(userServices);
+            assertTrue(userServices.hasNext());
+            SayHelloService service = userServices.next();
+            String result = service.sayHelloService(plain);
+            assertEquals("Hello World", service.sayHelloWorld());
+            assertEquals("Hello World", result);
+        } finally {
+            enclave.destroy();
+        }
     }
 }

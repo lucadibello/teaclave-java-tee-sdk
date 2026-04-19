@@ -23,43 +23,45 @@ import org.apache.teaclave.javasdk.host.EnclaveInfo;
 import org.apache.teaclave.javasdk.host.EnclaveType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Timeout(
+        value = 300,
+        unit = TimeUnit.SECONDS,
+        threadMode = Timeout.ThreadMode.SEPARATE_THREAD
+)
 public class TestEnclaveInfo {
 
     @BeforeEach
-    public final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
+    final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
 
     @AfterEach
-    public final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
+    final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
 
-    @Test
-    public void testEnclaveInfo() throws Exception {
-        Enclave enclave = EnclaveFactory.create(EnclaveType.MOCK_IN_JVM);
-        EnclaveInfo enclaveInfo = enclave.getEnclaveInfo();
-        assertEquals(enclaveInfo.getEnclaveType(), EnclaveType.MOCK_IN_JVM);
-        assertTrue(enclaveInfo.isEnclaveDebuggable());
-        assertEquals(enclaveInfo.getEnclaveEPCMemorySizeBytes(), -1);
-        assertEquals(enclaveInfo.getEnclaveMaxThreadsNumber(), -1);
-        enclave.destroy();
-
-        enclave = EnclaveFactory.create(EnclaveType.MOCK_IN_SVM);
-        enclaveInfo = enclave.getEnclaveInfo();
-        assertEquals(enclaveInfo.getEnclaveType(), EnclaveType.MOCK_IN_SVM);
-        assertTrue(enclaveInfo.isEnclaveDebuggable());
-        assertEquals(enclaveInfo.getEnclaveEPCMemorySizeBytes(), -1);
-        assertEquals(enclaveInfo.getEnclaveMaxThreadsNumber(), -1);
-        enclave.destroy();
-
-        // it's related to config file in test project.
-        enclave = EnclaveFactory.create(EnclaveType.TEE_SDK);
-        enclaveInfo = enclave.getEnclaveInfo();
-        assertEquals(enclaveInfo.getEnclaveType(), EnclaveType.TEE_SDK);
-        assertFalse(enclaveInfo.isEnclaveDebuggable());
-        assertEquals(enclaveInfo.getEnclaveEPCMemorySizeBytes(), 1500 * 1024 * 1024);
-        assertEquals(enclaveInfo.getEnclaveMaxThreadsNumber(), 50);
-        enclave.destroy();
+    @ParameterizedTest
+    @EnumSource(value = EnclaveType.class, mode = EnumSource.Mode.EXCLUDE, names = {"NONE", "EMBEDDED_LIB_OS"})
+    void testEnclaveInfo(EnclaveType type) throws Exception {
+        Enclave enclave = EnclaveFactory.create(type);
+        try {
+            EnclaveInfo enclaveInfo = enclave.getEnclaveInfo();
+            assertEquals(type, enclaveInfo.getEnclaveType());
+            if (type == EnclaveType.TEE_SDK) {
+                assertFalse(enclaveInfo.isEnclaveDebuggable());
+                assertEquals(1500 * 1024 * 1024, enclaveInfo.getEnclaveEPCMemorySizeBytes());
+                assertEquals(50, enclaveInfo.getEnclaveMaxThreadsNumber());
+            } else {
+                assertTrue(enclaveInfo.isEnclaveDebuggable());
+                assertEquals(-1, enclaveInfo.getEnclaveEPCMemorySizeBytes());
+                assertEquals(-1, enclaveInfo.getEnclaveMaxThreadsNumber());
+            }
+        } finally {
+            enclave.destroy();
+        }
     }
 }
