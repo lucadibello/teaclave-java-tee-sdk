@@ -20,25 +20,38 @@ package org.apache.teaclave.javasdk.test.host;
 import org.apache.teaclave.javasdk.host.Enclave;
 import org.apache.teaclave.javasdk.host.EnclaveFactory;
 import org.apache.teaclave.javasdk.host.EnclaveType;
-import org.apache.teaclave.javasdk.test.common.RSAService;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.apache.teaclave.javasdk.test.common.SHAService;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Iterator;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class TestEnclaveRSA {
-    @Before
+public class TestEnclaveSHA {
+    private String encryptSHA(String plaintext, String SHAType) throws NoSuchAlgorithmException {
+        MessageDigest md = MessageDigest.getInstance(SHAType);
+        byte[] messageDigest = md.digest(plaintext.getBytes());
+        BigInteger no = new BigInteger(1, messageDigest);
+        StringBuilder hashText = new StringBuilder(no.toString(16));
+        while (hashText.length() < 32) {
+            hashText.insert(0, "0");
+        }
+        return hashText.toString();
+    }
+
+    @BeforeEach
     public final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
 
-    @After
+    @AfterEach
     public final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
 
     @Test
-    public void testRSAService() throws Exception {
+    public void testEnclaveSHA() throws Exception {
         String plaintext = "Hello World!!!";
         EnclaveType[] types = new EnclaveType[]{
                 EnclaveType.MOCK_IN_JVM,
@@ -48,12 +61,14 @@ public class TestEnclaveRSA {
         for (EnclaveType type : types) {
             Enclave enclave = EnclaveFactory.create(type);
             assertNotNull(enclave);
-            Iterator<RSAService> userServices = enclave.load(RSAService.class);
+            Iterator<SHAService> userServices = enclave.load(SHAService.class);
             assertNotNull(userServices);
             assertTrue(userServices.hasNext());
-            RSAService service = userServices.next();
-            String result = service.encryptAndDecryptWithPlaintext(plaintext);
-            assertEquals(plaintext, result);
+            SHAService service = userServices.next();
+            String result = service.encryptPlaintext(plaintext, "SHA-384");
+            assertEquals(encryptSHA(plaintext, "SHA-384"), result);
+            result = service.encryptPlaintext(plaintext, "SHA-512");
+            assertEquals(encryptSHA(plaintext, "SHA-512"), result);
             enclave.destroy();
         }
     }

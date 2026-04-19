@@ -18,9 +18,9 @@
 package org.apache.teaclave.javasdk.test.host;
 
 import org.apache.teaclave.javasdk.host.*;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import javax.management.MBeanServer;
 import javax.management.MBeanServerConnection;
@@ -97,10 +97,10 @@ public class TestEnclaveInfoMXBean {
         enclaveTEE.destroy();
     }
 
-    @Before
+    @BeforeEach
     public final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
 
-    @After
+    @AfterEach
     public final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
 
     @Test

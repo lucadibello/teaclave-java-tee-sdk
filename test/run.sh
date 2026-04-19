@@ -23,8 +23,8 @@
 echo "PCCS_URL=https://sgx-dcap-server.cn-hongkong.aliyuncs.com/sgx/certification/v3/" > /etc/sgx_default_qcnl.conf
 echo "USE_SECURE_CERT=TRUE" >> /etc/sgx_default_qcnl.conf
 
-# Compile test project.
-mvn -Pnative clean package
+# Compile test project (we skip native-tests on package)
+mvn clean package -Pnative -DskipNativeTests=true
 
-# Start Teaclave java sdk test.
-OCCLUM_RELEASE_ENCLAVE=true $JAVA_HOME/bin/java -cp host/target/host-0.1.0-jar-with-dependencies.jar:enclave/target/enclave-0.1.0-jar-with-dependencies.jar org.apache.teaclave.javasdk.test.host.TestMain
+# Run host tests via surefire (JUnit 5)
+OCCLUM_RELEASE_ENCLAVE=true mvn test -pl host

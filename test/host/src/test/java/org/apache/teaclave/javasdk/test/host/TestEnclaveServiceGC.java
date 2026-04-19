@@ -20,44 +20,44 @@ package org.apache.teaclave.javasdk.test.host;
 import org.apache.teaclave.javasdk.host.Enclave;
 import org.apache.teaclave.javasdk.host.EnclaveFactory;
 import org.apache.teaclave.javasdk.host.EnclaveType;
-import org.apache.teaclave.javasdk.host.exception.EnclaveCreatingException;
-import org.apache.teaclave.javasdk.host.exception.EnclaveDestroyingException;
-import org.apache.teaclave.javasdk.host.exception.ServicesLoadingException;
-import org.apache.teaclave.javasdk.test.common.ReflectionCallService;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.apache.teaclave.javasdk.test.common.EnclaveServiceStatistic;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Iterator;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class TestEnclaveReflection {
-
-    private void reflectionCallService(EnclaveType type) throws EnclaveCreatingException, ServicesLoadingException, EnclaveDestroyingException {
+public class TestEnclaveServiceGC {
+    private void enclaveServiceGC(EnclaveType type) throws Exception {
+        int count = 1001;
         Enclave enclave = EnclaveFactory.create(type);
         assertNotNull(enclave);
-        Iterator<ReflectionCallService> userServices = enclave.load(ReflectionCallService.class);
-        assertNotNull(userServices);
-        assertTrue(userServices.hasNext());
-        ReflectionCallService service = userServices.next();
-        assertEquals(20, service.add(2, 18));
-        assertEquals(-20, service.sub(2, 22));
+        for (int i = 0x0; i < count; i++) {
+            Iterator<EnclaveServiceStatistic> userServices = enclave.load(EnclaveServiceStatistic.class);
+            assertNotNull(userServices);
+            assertTrue(userServices.hasNext());
+        }
+        System.gc();
+        Thread.sleep(1000);
+        System.gc();
+        Thread.sleep(1000);
+        Iterator<EnclaveServiceStatistic> userServices = enclave.load(EnclaveServiceStatistic.class);
+        assertEquals(1, userServices.next().getEnclaveServiceCount());
         enclave.destroy();
     }
 
-    @Before
+    @BeforeEach
     public final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
 
-    @After
+    @AfterEach
     public final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
 
     @Test
-    public void testReflectionCallService() throws Exception {
-        reflectionCallService(EnclaveType.MOCK_IN_JVM);
-        reflectionCallService(EnclaveType.MOCK_IN_SVM);
-        reflectionCallService(EnclaveType.TEE_SDK);
-        // reflectionCallService(EnclaveType.EMBEDDED_LIB_OS);
+    public void testEnclaveServiceGC() throws Exception {
+        enclaveServiceGC(EnclaveType.MOCK_IN_SVM);
+        enclaveServiceGC(EnclaveType.TEE_SDK);
+        // enclaveServiceGC(EnclaveType.EMBEDDED_LIB_OS);
     }
 }

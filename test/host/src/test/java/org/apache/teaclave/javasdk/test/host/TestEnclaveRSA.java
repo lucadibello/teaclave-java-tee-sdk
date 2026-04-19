@@ -20,44 +20,41 @@ package org.apache.teaclave.javasdk.test.host;
 import org.apache.teaclave.javasdk.host.Enclave;
 import org.apache.teaclave.javasdk.host.EnclaveFactory;
 import org.apache.teaclave.javasdk.host.EnclaveType;
-import org.apache.teaclave.javasdk.test.common.EnclaveServiceStatistic;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.apache.teaclave.javasdk.test.common.RSAService;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Iterator;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class TestEnclaveServiceGC {
-    private void enclaveServiceGC(EnclaveType type) throws Exception {
-        int count = 1001;
-        Enclave enclave = EnclaveFactory.create(type);
-        assertNotNull(enclave);
-        for (int i = 0x0; i < count; i++) {
-            Iterator<EnclaveServiceStatistic> userServices = enclave.load(EnclaveServiceStatistic.class);
-            assertNotNull(userServices);
-            assertTrue(userServices.hasNext());
-        }
-        System.gc();
-        Thread.sleep(1000);
-        System.gc();
-        Thread.sleep(1000);
-        Iterator<EnclaveServiceStatistic> userServices = enclave.load(EnclaveServiceStatistic.class);
-        assertEquals(1, userServices.next().getEnclaveServiceCount());
-        enclave.destroy();
-    }
-
-    @Before
+public class TestEnclaveRSA {
+    @BeforeEach
     public final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
 
-    @After
+    @AfterEach
     public final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
 
     @Test
-    public void testEnclaveServiceGC() throws Exception {
-        enclaveServiceGC(EnclaveType.MOCK_IN_SVM);
-        enclaveServiceGC(EnclaveType.TEE_SDK);
-        // enclaveServiceGC(EnclaveType.EMBEDDED_LIB_OS);
+    public void testRSAService() throws Exception {
+        String plaintext = "Hello World!!!";
+        EnclaveType[] types = new EnclaveType[]{
+                EnclaveType.MOCK_IN_JVM,
+                EnclaveType.MOCK_IN_SVM,
+                EnclaveType.TEE_SDK};
+
+        for (EnclaveType type : types) {
+            Enclave enclave = EnclaveFactory.create(type);
+            assertNotNull(enclave);
+            Iterator<RSAService> userServices = enclave.load(RSAService.class);
+            assertNotNull(userServices);
+            assertTrue(userServices.hasNext());
+            RSAService service = userServices.next();
+            String result = service.encryptAndDecryptWithPlaintext(plaintext);
+            assertEquals(plaintext, result);
+            enclave.destroy();
+        }
     }
 }

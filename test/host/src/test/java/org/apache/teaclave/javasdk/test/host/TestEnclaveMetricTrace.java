@@ -22,9 +22,9 @@ import org.apache.teaclave.javasdk.host.EnclaveFactory;
 import org.apache.teaclave.javasdk.host.EnclaveType;
 import org.apache.teaclave.javasdk.host.MetricTrace;
 import org.apache.teaclave.javasdk.test.common.MetricTraceService;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -44,10 +44,10 @@ public class TestEnclaveMetricTrace {
         return new String(content);
     }
 
-    @Before
+    @BeforeEach
     public final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
 
-    @After
+    @AfterEach
     public final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
 
     @Test

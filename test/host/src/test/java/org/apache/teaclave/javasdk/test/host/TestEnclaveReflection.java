@@ -23,42 +23,41 @@ import org.apache.teaclave.javasdk.host.EnclaveType;
 import org.apache.teaclave.javasdk.host.exception.EnclaveCreatingException;
 import org.apache.teaclave.javasdk.host.exception.EnclaveDestroyingException;
 import org.apache.teaclave.javasdk.host.exception.ServicesLoadingException;
-import org.apache.teaclave.javasdk.test.common.SayHelloService;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.apache.teaclave.javasdk.test.common.ReflectionCallService;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Iterator;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class TestHelloWorld {
+public class TestEnclaveReflection {
 
-    private String sayHelloService(EnclaveType type, String plain) throws
-            EnclaveCreatingException, ServicesLoadingException, EnclaveDestroyingException {
+    private void reflectionCallService(EnclaveType type) throws EnclaveCreatingException, ServicesLoadingException, EnclaveDestroyingException {
         Enclave enclave = EnclaveFactory.create(type);
         assertNotNull(enclave);
-        Iterator<SayHelloService> userServices = enclave.load(SayHelloService.class);
+        Iterator<ReflectionCallService> userServices = enclave.load(ReflectionCallService.class);
         assertNotNull(userServices);
         assertTrue(userServices.hasNext());
-        SayHelloService service = userServices.next();
-        String result = service.sayHelloService(plain);
-        assertEquals("Hello World", service.sayHelloWorld());
+        ReflectionCallService service = userServices.next();
+        assertEquals(20, service.add(2, 18));
+        assertEquals(-20, service.sub(2, 22));
         enclave.destroy();
-        return result;
     }
 
-    @Before
+    @BeforeEach
     public final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
 
-    @After
+    @AfterEach
     public final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
 
     @Test
-    public void testSayHelloService() throws Exception {
-        assertEquals("Hello World", sayHelloService(EnclaveType.MOCK_IN_JVM, "Hello World"));
-        assertEquals("Hello World", sayHelloService(EnclaveType.MOCK_IN_SVM, "Hello World"));
-        assertEquals("Hello World", sayHelloService(EnclaveType.TEE_SDK, "Hello World"));
-        // assertEquals("Hello World", sayHelloService(EnclaveType.EMBEDDED_LIB_OS, "Hello World"));
+    public void testReflectionCallService() throws Exception {
+        reflectionCallService(EnclaveType.MOCK_IN_JVM);
+        reflectionCallService(EnclaveType.MOCK_IN_SVM);
+        reflectionCallService(EnclaveType.TEE_SDK);
+        // reflectionCallService(EnclaveType.EMBEDDED_LIB_OS);
     }
 }
