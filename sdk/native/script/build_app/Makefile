@@ -15,15 +15,17 @@
 # specific language governing permissions and limitations
 # under the License.
 
-include /opt/javaenclave/config/config.mk
-include /opt/javaenclave/config/platform/tee_sdk_svm/jni/config.mk
+include $(BUILD_SCRIPT_DIR)/../config/config.mk
+include $(BUILD_SCRIPT_DIR)/../config/platform/tee_sdk_svm/jni/config.mk
 
-LIB_SUNEC=sunec
+XATTR_STUB_SRC := /opt/javaenclave/stubs/xattr_stubs.c
+XATTR_STUB_OBJ := ${ENCLAVE_BASE_DIR}/target/enclave_workspace/xattr_stubs.o
+
+LIB_SUNEC_FLAG :=
 
 .PHONY: all build clean
 
-all:
-	$(MAKE) build
+all: build
 
 build:
 ifeq ($(TEE_SDK), TRUE)
@@ -39,16 +41,22 @@ ifeq ($(TEE_SDK), TRUE)
 	# copy libenc_sunec.a from svm-output to enclave_workspace if it exist.
 	cp ${ENCLAVE_BASE_DIR}/target/svm-output/libenc_sunec.a ${ENCLAVE_BASE_DIR}/target/enclave_workspace 2>/dev/null || :
 
+	# compile xattr stubs
+	$(CC) -c -fPIC -ffunction-sections -fdata-sections -fvisibility=hidden -o ${XATTR_STUB_OBJ} ${XATTR_STUB_SRC}
+
     ifneq ($(wildcard ${ENCLAVE_BASE_DIR}/target/enclave_workspace/libenc_sunec.a),)
-		LIB_SUNEC=enc_sunec
+		LIB_SUNEC_FLAG := -lenc_sunec
+    else ifneq ($(wildcard ${JAVA_HOME}/lib/static/linux-amd64/glibc/libsunec.a),)
+		LIB_SUNEC_FLAG := -lsunec
     endif
 
 	$(CC) -o ${ENCLAVE_BASE_DIR}/target/svm-output/lib_tee_sdk_svm_load \
 	/opt/javaenclave/bin/platform/tee_sdk_svm/*.o ${ENCLAVE_BASE_DIR}/target/svm-output/lib_tee_sdk_svm_load.o \
+	${XATTR_STUB_OBJ} \
 	-L${JAVA_HOME}/lib/static/linux-amd64/glibc    \
 	-L${ENCLAVE_BASE_DIR}/target/enclave_workspace \
-	-fpie -ljava -lzip -lnio -lnet -l$(LIB_SUNEC) -ljvm -lfdlibm -llibchelper \
-	$(TS_ENCLAVE_LDFLAGS) -Wl,--version-script=/opt/javaenclave/config/platform/tee_sdk_svm/edl/tee_sdk_enclave.lds
+	-fpie -ljava -lzip -lnio -lnet $(LIB_SUNEC_FLAG) -ljvm -lfdlibm -llibchelper \
+	$(TS_ENCLAVE_LDFLAGS) -Wl,--version-script=$(BUILD_SCRIPT_DIR)/../config/platform/tee_sdk_svm/edl/tee_sdk_enclave.lds
 
     # create tee_sdk.conf
 	/bin/bash ${BUILD_SCRIPT_DIR}/create_tee_sdk_configure.sh ${ENCLAVE_BASE_DIR}/src/main/resources ${ENCLAVE_BASE_DIR}/target/enclave_workspace
