@@ -17,7 +17,7 @@ help:
 	@echo "  make enclave       - Builds the native SGX enclave using GraalVM Native Image and signs the resulting binary."
 	@echo "  make host          - Compiles the host-side application, bundling the signed enclave binary into resources."
 	@echo "  make test          - Runs the JUnit test suite via Maven Surefire (redirects output, use for CI/automated checks)."
-	@echo "  make test-console  - Runs JUnit tests via ConsoleLauncher to bypass Surefire and see raw enclave/native logs."
+	@echo "  make test-debug    - Runs JUnit tests via ConsoleLauncher to bypass Surefire and see raw enclave/native logs."
 	@echo "  make test-method   - Runs a specific test method via ConsoleLauncher. Usage: make test-method CLASS=TestClassName METHOD=methodName"
 	@echo "  make clean         - Removes all build artifacts, target directories, and temporary native-image files."
 	@echo ""
@@ -43,7 +43,7 @@ host:
 test:
 	sudo $(MVN) -f $(ROOT_POM) test -pl host -am
 
-test-console:
+test-debug:
 	@TEST_CP=$$($(MVN) -f host/pom.xml -q dependency:build-classpath -DincludeScope=test -Dmdep.outputFile=/dev/stdout 2>/dev/null); \
 	sudo java -cp "$(JAR):host/target/test-classes:$$TEST_CP" \
 		org.junit.platform.console.ConsoleLauncher execute \
