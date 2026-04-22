@@ -619,6 +619,7 @@ public class SimpleEnclaveImpl implements SimpleService {
             result[0] = fib(fibN);
         }, "enclave-inline-fib");
         t.start();
+        try { t.join(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
         return result[0];
     }
 

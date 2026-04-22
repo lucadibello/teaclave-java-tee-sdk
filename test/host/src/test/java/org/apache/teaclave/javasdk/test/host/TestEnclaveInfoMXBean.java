@@ -62,7 +62,10 @@ public class TestEnclaveInfoMXBean {
         return -1;
     }
 
+    private volatile int baselineEnclaveCount;
+
     private void service() throws Exception {
+        baselineEnclaveCount = EnclaveInfoManager.getEnclaveInfoManagerInstance().getEnclaveInstanceNumber();
         Enclave enclaveJVM = EnclaveFactory.create(EnclaveType.MOCK_IN_JVM);
         EnclaveInfo enclaveInfoJVM = enclaveJVM.getEnclaveInfo();
         assertEquals(enclaveInfoJVM.getEnclaveType(), EnclaveType.MOCK_IN_JVM);
@@ -127,9 +130,10 @@ public class TestEnclaveInfoMXBean {
         JMXConnector jmxClient = JMXConnectorFactory.connect(url);
         MBeanServerConnection mbsClient = jmxClient.getMBeanServerConnection();
         ObjectName mBeanName = new ObjectName(DOMAIN_NAME + ":name=" + ENCLAVE_MX_BEAN_STUB);
-        assertEquals(3, mbsClient.getAttribute(mBeanName, "EnclaveInstanceNumber"));
+        int total = (int) mbsClient.getAttribute(mBeanName, "EnclaveInstanceNumber");
+        assertEquals(baselineEnclaveCount + 3, total);
         CompositeData[] enclaveInfos = (CompositeData[]) mbsClient.getAttribute(mBeanName, "EnclaveInstancesInfo");
-        assertEquals(3, enclaveInfos.length);
+        assertEquals(baselineEnclaveCount + 3, enclaveInfos.length);
         for (CompositeData enclaveInfo : enclaveInfos) {
             String enclaveType = (String) enclaveInfo.get("enclaveType");
             switch (enclaveType) {

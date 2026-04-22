@@ -23,6 +23,7 @@ import org.apache.teaclave.javasdk.host.exception.EnclaveDestroyingException;
 import org.apache.teaclave.javasdk.host.exception.RemoteAttestationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -45,6 +46,9 @@ public class TestRemoteAttestation {
     @AfterEach
     final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
 
+    @Disabled("Remote attestation requires Intel PCS with a reachable domain + valid PCK cert; "
+            + "our domain is no longer registered, so the SGX QE returns 0xe040 "
+            + "(p_sgx_get_quote_config). Re-enable once attestation infra is restored.")
     @ParameterizedTest
     @EnumSource(value = EnclaveType.class, names = {"TEE_SDK"})
     void testRemoteAttestation(EnclaveType type) throws Exception {
