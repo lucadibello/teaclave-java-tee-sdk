@@ -1,2 +1,8 @@
 [
+  {
+    "name": "org.apache.teaclave.javasdk.test.enclave.Calculate",
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true
+  }
 ]
