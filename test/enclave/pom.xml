@@ -41,47 +41,6 @@
                         <extensions>true</extensions>
                         <executions>
                             <execution>
-                                <id>test-native</id>
-                                <goals>
-                                    <goal>test</goal>
-                                </goals>
-                                <configuration>
-                                    <buildArgs>
-                                        <buildArg>--no-fallback</buildArg>
-                                        <buildArg>-H:+RunInEnclave</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=/opt/javaenclave/bin/platform/tee_sdk_svm/generate_attestation_report.o</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=/opt/javaenclave/bin/platform/tee_sdk_svm/sgx_mmap.o</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=/opt/javaenclave/bin/platform/tee_sdk_svm/tee_sdk_enclave_t.o</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=/opt/javaenclave/bin/platform/tee_sdk_svm/tee_sdk_symbol.o</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=/opt/javaenclave/bin/platform/tee_sdk_svm/tee_sdk_wrapper.o</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=${project.build.directory}/xattr_stubs.o</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=-L/opt/teesdk/sgxsdk/lib64</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=-nostdlib</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=-nodefaultlibs</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=-nostartfiles</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=-Wl,-z,relro,-z,now,-z,noexecstack</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=-Wl,--whole-archive</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=-lsgx_trts</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=-Wl,--no-whole-archive</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=-Wl,--start-group</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=-lsgx_tstdc</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=-lsgx_tstdc_ex</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=-lsgx_tcxx</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=-lsgx_pthread</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=-lsgx_tcrypto</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=-lsgx_tservice</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=-Wl,--end-group</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=-Wl,-Bstatic</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=-Wl,-Bsymbolic</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=-Wl,--no-undefined</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=-Wl,-pie,-eenclave_entry</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=-Wl,--export-dynamic</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=-Wl,--defsym,__ImageBase=0</buildArg>
-                                    </buildArgs>
-                                </configuration>
-                                <phase>test</phase>
-                            </execution>
-                            <execution>
                                 <id>build-native</id>
                                 <goals>
                                     <goal>build</goal>
@@ -91,9 +50,11 @@
                                     <buildArgs>
                                         <buildArg>--shared</buildArg>
                                         <buildArg>--no-fallback</buildArg>
+                                        <buildArg>-H:Path=svm-output</buildArg>
                                         <buildArg>-H:Path=${project.build.directory}/svm-output</buildArg>
                                         <buildArg>-o ${project.build.directory}/svm-output/lib_mock_svm_load</buildArg>
-                                        <buildArg>-H:NativeLinkerOption=${project.build.directory}/mock_tcs_stubs.o</buildArg>
+                                        <buildArg>-H:NativeLinkerOption=${project.build.directory}/stubs/mock_tcs_stubs.o</buildArg>
+                                        <buildArg>-H:NativeLinkerOption=${project.build.directory}/stubs/rand_stubs.o</buildArg>
                                     </buildArgs>
                                 </configuration>
                                 <phase>package</phase>
@@ -110,7 +71,6 @@
                                         <buildArg>--no-fallback</buildArg>
                                         <buildArg>-H:-AllowVMInternalThreads</buildArg>
                                         <buildArg>-H:+RunInEnclave</buildArg>
-                                        <buildArg>-H:+TraceSecurityServices</buildArg>
                                         <buildArg>-H:Path=${project.build.directory}/svm-output</buildArg>
                                         <buildArg>-o ${project.build.directory}/svm-output/lib_tee_sdk_svm_load</buildArg>
                                     </buildArgs>
@@ -129,39 +89,16 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <executions>
                             <execution>
-                                <id>CompileXattrStubs</id>
-                                <phase>generate-test-sources</phase>
+                                <id>CompileMockStubs</id>
+                                <phase>generate-sources</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>gcc</executable>
+                                    <executable>bash</executable>
                                     <arguments>
                                         <argument>-c</argument>
-                                        <argument>-fPIC</argument>
-                                        <argument>-ffunction-sections</argument>
-                                        <argument>-fdata-sections</argument>
-                                        <argument>-fvisibility=hidden</argument>
-                                        <argument>-o</argument>
-                                        <argument>${project.build.directory}/xattr_stubs.o</argument>
-                                        <argument>${project.basedir}/src/main/native/xattr_stubs.c</argument>
-                                    </arguments>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>CompileMockTcsStubs</id>
-                                <phase>generate-test-sources</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <executable>gcc</executable>
-                                    <arguments>
-                                        <argument>-c</argument>
-                                        <argument>-fPIC</argument>
-                                        <argument>-o</argument>
-                                        <argument>${project.build.directory}/mock_tcs_stubs.o</argument>
-                                        <argument>/opt/javaenclave/stubs/mock_tcs_stubs.c</argument>
+                                        <argument>mkdir -p ${project.build.directory}/stubs &amp;&amp; gcc -c -fPIC -ffunction-sections -fdata-sections -fvisibility=hidden -o ${project.build.directory}/stubs/mock_tcs_stubs.o /opt/javaenclave/stubs/mock_tcs_stubs.c &amp;&amp; gcc -c -fPIC -ffunction-sections -fdata-sections -fvisibility=hidden -o ${project.build.directory}/stubs/rand_stubs.o /opt/javaenclave/stubs/rand_stubs.c</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
