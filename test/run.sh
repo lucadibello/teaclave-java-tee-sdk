@@ -23,8 +23,10 @@
 echo "PCCS_URL=https://sgx-dcap-server.cn-hongkong.aliyuncs.com/sgx/certification/v3/" > /etc/sgx_default_qcnl.conf
 echo "USE_SECURE_CERT=TRUE" >> /etc/sgx_default_qcnl.conf
 
-# Compile test project (we skip native-tests on package)
-mvn clean package -Pnative -DskipNativeTests=true
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Run host tests via surefire (JUnit 5)
-OCCLUM_RELEASE_ENCLAVE=true mvn test -pl host
+# Compile test project (we skip native-tests on package since we are using surefire)
+mvn -f "${SCRIPT_DIR}/pom.xml" clean package -Pnative -DskipNativeTests=true
+
+# Run host tests via surefire (JUnit 6)
+OCCLUM_RELEASE_ENCLAVE=true mvn -f "${SCRIPT_DIR}/pom.xml" test -pl host -am
