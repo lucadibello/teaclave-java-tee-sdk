@@ -17,17 +17,7 @@
 
 package org.apache.teaclave.javasdk.test.host;
 
-import org.apache.teaclave.javasdk.host.*;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-
-import javax.management.MBeanServer;
-import javax.management.MBeanServerConnection;
-import javax.management.ObjectName;
-import javax.management.openmbean.CompositeData;
-import javax.management.remote.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
@@ -35,15 +25,24 @@ import java.net.ServerSocket;
 import java.rmi.registry.LocateRegistry;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
-import static org.junit.jupiter.api.Assertions.*;
+import javax.management.MBeanServer;
+import javax.management.MBeanServerConnection;
+import javax.management.ObjectName;
+import javax.management.openmbean.CompositeData;
+import javax.management.remote.*;
+import org.apache.teaclave.javasdk.host.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 @Timeout(
-        value = 300,
-        unit = TimeUnit.SECONDS,
-        threadMode = Timeout.ThreadMode.SEPARATE_THREAD
+    value = 30,
+    unit = TimeUnit.SECONDS,
+    threadMode = Timeout.ThreadMode.SEPARATE_THREAD
 )
 public class TestEnclaveInfoMXBean {
+
     private static final String DOMAIN_NAME = "EnclaveMXBean";
     private static final String ENCLAVE_MX_BEAN_STUB = "enclaveInfoMXBeanStub";
 
@@ -65,7 +64,8 @@ public class TestEnclaveInfoMXBean {
     private volatile int baselineEnclaveCount;
 
     private void service() throws Exception {
-        baselineEnclaveCount = EnclaveInfoManager.getEnclaveInfoManagerInstance().getEnclaveInstanceNumber();
+        baselineEnclaveCount =
+            EnclaveInfoManager.getEnclaveInfoManagerInstance().getEnclaveInstanceNumber();
         Enclave enclaveJVM = EnclaveFactory.create(EnclaveType.MOCK_IN_JVM);
         EnclaveInfo enclaveInfoJVM = enclaveJVM.getEnclaveInfo();
         assertEquals(enclaveInfoJVM.getEnclaveType(), EnclaveType.MOCK_IN_JVM);
@@ -85,18 +85,34 @@ public class TestEnclaveInfoMXBean {
         EnclaveInfo enclaveInfoTEE = enclaveTEE.getEnclaveInfo();
         assertEquals(enclaveInfoTEE.getEnclaveType(), EnclaveType.TEE_SDK);
         assertFalse(enclaveInfoTEE.isEnclaveDebuggable());
-        assertEquals(enclaveInfoTEE.getEnclaveEPCMemorySizeBytes(), 1500 * 1024 * 1024);
+        assertEquals(
+            enclaveInfoTEE.getEnclaveEPCMemorySizeBytes(),
+            1500 * 1024 * 1024
+        );
         assertEquals(enclaveInfoTEE.getEnclaveMaxThreadsNumber(), 50);
 
-        enclaveInfoMXBeanStub = new ObjectName(DOMAIN_NAME + ":name=" + ENCLAVE_MX_BEAN_STUB);
+        enclaveInfoMXBeanStub = new ObjectName(
+            DOMAIN_NAME + ":name=" + ENCLAVE_MX_BEAN_STUB
+        );
         MBeanServer mxBeanService = ManagementFactory.getPlatformMBeanServer();
         mxBeanService.registerMBean(
-                EnclaveInfoManager.getEnclaveInfoManagerInstance(),
-                enclaveInfoMXBeanStub);
+            EnclaveInfoManager.getEnclaveInfoManagerInstance(),
+            enclaveInfoMXBeanStub
+        );
 
         LocateRegistry.createRegistry(rmiPort);
-        JMXServiceURL url = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://localhost:" + rmiPort + "/" + DOMAIN_NAME);
-        JMXConnectorServer jmxConnector = JMXConnectorServerFactory.newJMXConnectorServer(url, null, mxBeanService);
+        JMXServiceURL url = new JMXServiceURL(
+            "service:jmx:rmi:///jndi/rmi://localhost:" +
+                rmiPort +
+                "/" +
+                DOMAIN_NAME
+        );
+        JMXConnectorServer jmxConnector =
+            JMXConnectorServerFactory.newJMXConnectorServer(
+                url,
+                null,
+                mxBeanService
+            );
         jmxConnector.start();
 
         cl0.countDown();
@@ -108,10 +124,14 @@ public class TestEnclaveInfoMXBean {
     }
 
     @BeforeEach
-    final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
+    final void before() {
+        System.out.println("enter test case: " + this.getClass().getName());
+    }
 
     @AfterEach
-    final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
+    final void after() {
+        System.out.println("exit test case: " + this.getClass().getName());
+    }
 
     @Test
     void testEnclaveInfo() throws Exception {
@@ -126,26 +146,51 @@ public class TestEnclaveInfoMXBean {
         serviceThread.start();
         // wait for mxbean service startup.
         cl0.await();
-        JMXServiceURL url = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://localhost:" + rmiPort + "/" + DOMAIN_NAME);
+        JMXServiceURL url = new JMXServiceURL(
+            "service:jmx:rmi:///jndi/rmi://localhost:" +
+                rmiPort +
+                "/" +
+                DOMAIN_NAME
+        );
         JMXConnector jmxClient = JMXConnectorFactory.connect(url);
         MBeanServerConnection mbsClient = jmxClient.getMBeanServerConnection();
-        ObjectName mBeanName = new ObjectName(DOMAIN_NAME + ":name=" + ENCLAVE_MX_BEAN_STUB);
-        int total = (int) mbsClient.getAttribute(mBeanName, "EnclaveInstanceNumber");
+        ObjectName mBeanName = new ObjectName(
+            DOMAIN_NAME + ":name=" + ENCLAVE_MX_BEAN_STUB
+        );
+        int total = (int) mbsClient.getAttribute(
+            mBeanName,
+            "EnclaveInstanceNumber"
+        );
         assertEquals(baselineEnclaveCount + 3, total);
-        CompositeData[] enclaveInfos = (CompositeData[]) mbsClient.getAttribute(mBeanName, "EnclaveInstancesInfo");
+        CompositeData[] enclaveInfos = (CompositeData[]) mbsClient.getAttribute(
+            mBeanName,
+            "EnclaveInstancesInfo"
+        );
         assertEquals(baselineEnclaveCount + 3, enclaveInfos.length);
         for (CompositeData enclaveInfo : enclaveInfos) {
             String enclaveType = (String) enclaveInfo.get("enclaveType");
             switch (enclaveType) {
                 case "MOCK_IN_JVM":
                 case "MOCK_IN_SVM":
-                    assertEquals((long)enclaveInfo.get("enclaveEPCMemorySizeBytes"), -1);
-                    assertEquals((int)enclaveInfo.get("enclaveMaxThreadsNumber"), -1);
+                    assertEquals(
+                        (long) enclaveInfo.get("enclaveEPCMemorySizeBytes"),
+                        -1
+                    );
+                    assertEquals(
+                        (int) enclaveInfo.get("enclaveMaxThreadsNumber"),
+                        -1
+                    );
                     break;
                 case "TEE_SDK":
                 case "EMBEDDED_LIB_OS":
-                    assertEquals((long)enclaveInfo.get("enclaveEPCMemorySizeBytes"), 1500 * 1024 * 1024);
-                    assertEquals((int)enclaveInfo.get("enclaveMaxThreadsNumber"), 50);
+                    assertEquals(
+                        (long) enclaveInfo.get("enclaveEPCMemorySizeBytes"),
+                        1500 * 1024 * 1024
+                    );
+                    assertEquals(
+                        (int) enclaveInfo.get("enclaveMaxThreadsNumber"),
+                        50
+                    );
                     break;
                 case "NONE":
                     assert (false);

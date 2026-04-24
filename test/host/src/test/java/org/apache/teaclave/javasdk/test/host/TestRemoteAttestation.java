@@ -17,6 +17,10 @@
 
 package org.apache.teaclave.javasdk.test.host;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import org.apache.teaclave.javasdk.host.*;
 import org.apache.teaclave.javasdk.host.exception.EnclaveCreatingException;
 import org.apache.teaclave.javasdk.host.exception.EnclaveDestroyingException;
@@ -28,29 +32,30 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 @Timeout(
-        value = 300,
-        unit = TimeUnit.SECONDS,
-        threadMode = Timeout.ThreadMode.SEPARATE_THREAD
+    value = 30,
+    unit = TimeUnit.SECONDS,
+    threadMode = Timeout.ThreadMode.SEPARATE_THREAD
 )
 public class TestRemoteAttestation {
 
     @BeforeEach
-    final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
+    final void before() {
+        System.out.println("enter test case: " + this.getClass().getName());
+    }
 
     @AfterEach
-    final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
+    final void after() {
+        System.out.println("exit test case: " + this.getClass().getName());
+    }
 
-    @Disabled("Remote attestation requires Intel PCS with a reachable domain + valid PCK cert; "
-            + "our domain is no longer registered, so the SGX QE returns 0xe040 "
-            + "(p_sgx_get_quote_config). Re-enable once attestation infra is restored.")
+    @Disabled(
+        "Remote attestation requires Intel PCS with a reachable domain + valid PCK cert; " +
+            "our domain is no longer registered, so the SGX QE returns 0xe040 " +
+            "(p_sgx_get_quote_config). Re-enable once attestation infra is restored."
+    )
     @ParameterizedTest
-    @EnumSource(value = EnclaveType.class, names = {"TEE_SDK"})
+    @EnumSource(value = EnclaveType.class, names = { "TEE_SDK" })
     void testRemoteAttestation(EnclaveType type) throws Exception {
         Enclave enclave = EnclaveFactory.create(type);
         try {
@@ -58,7 +63,11 @@ public class TestRemoteAttestation {
             byte[] userData = new byte[64];
             new Random().nextBytes(userData);
 
-            SGXAttestationReport report = (SGXAttestationReport) RemoteAttestation.generateAttestationReport(enclave, userData);
+            SGXAttestationReport report =
+                (SGXAttestationReport) RemoteAttestation.generateAttestationReport(
+                    enclave,
+                    userData
+                );
             assertEquals(report.getEnclaveType(), type);
             assertNotNull(report.getQuote());
             assertEquals(0, RemoteAttestation.verifyAttestationReport(report));

@@ -17,6 +17,10 @@
 
 package org.apache.teaclave.javasdk.test.host;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 import org.apache.teaclave.javasdk.host.Enclave;
 import org.apache.teaclave.javasdk.host.EnclaveFactory;
 import org.apache.teaclave.javasdk.host.EnclaveType;
@@ -30,31 +34,36 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
-import java.util.Iterator;
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 @Timeout(
-        value = 300,
-        unit = TimeUnit.SECONDS,
-        threadMode = Timeout.ThreadMode.SEPARATE_THREAD
+    value = 30,
+    unit = TimeUnit.SECONDS,
+    threadMode = Timeout.ThreadMode.SEPARATE_THREAD
 )
 public class TestEnclaveReflection {
 
     @BeforeEach
-    final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
+    final void before() {
+        System.out.println("enter test case: " + this.getClass().getName());
+    }
 
     @AfterEach
-    final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
+    final void after() {
+        System.out.println("exit test case: " + this.getClass().getName());
+    }
 
     @ParameterizedTest
-    @EnumSource(value = EnclaveType.class, mode = EnumSource.Mode.EXCLUDE, names = {"NONE", "EMBEDDED_LIB_OS"})
+    @EnumSource(
+        value = EnclaveType.class,
+        mode = EnumSource.Mode.EXCLUDE,
+        names = { "NONE", "EMBEDDED_LIB_OS" }
+    )
     void testReflectionCallService(EnclaveType type) throws Exception {
         Enclave enclave = EnclaveFactory.create(type);
         try {
             assertNotNull(enclave);
-            Iterator<ReflectionCallService> userServices = enclave.load(ReflectionCallService.class);
+            Iterator<ReflectionCallService> userServices = enclave.load(
+                ReflectionCallService.class
+            );
             assertNotNull(userServices);
             assertTrue(userServices.hasNext());
             ReflectionCallService service = userServices.next();

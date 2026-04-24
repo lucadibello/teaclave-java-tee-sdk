@@ -17,6 +17,14 @@
 
 package org.apache.teaclave.javasdk.test.host;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 import org.apache.teaclave.javasdk.host.Enclave;
 import org.apache.teaclave.javasdk.host.EnclaveFactory;
 import org.apache.teaclave.javasdk.host.EnclaveType;
@@ -30,21 +38,13 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.lang.reflect.Field;
-import java.util.Iterator;
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 @Timeout(
-        value = 300,
-        unit = TimeUnit.SECONDS,
-        threadMode = Timeout.ThreadMode.SEPARATE_THREAD
+    value = 30,
+    unit = TimeUnit.SECONDS,
+    threadMode = Timeout.ThreadMode.SEPARATE_THREAD
 )
 public class TestEnclaveMetricTrace {
+
     private static String invertCharacter(String str) {
         byte[] content = new byte[str.length()];
         byte[] initial = str.getBytes();
@@ -86,13 +86,19 @@ public class TestEnclaveMetricTrace {
     }
 
     @ParameterizedTest
-    @EnumSource(value = EnclaveType.class, mode = EnumSource.Mode.EXCLUDE, names = {"NONE", "EMBEDDED_LIB_OS"})
+    @EnumSource(
+        value = EnclaveType.class,
+        mode = EnumSource.Mode.EXCLUDE,
+        names = { "NONE", "EMBEDDED_LIB_OS" }
+    )
     void testEnclaveMetricTrace(EnclaveType type) throws Exception {
         String plaintext = "ABC_DEF_GHI_JKL_MNO_PQR_STU_VWX_YZ";
         Enclave enclave = EnclaveFactory.create(type);
         try {
             assertNotNull(enclave);
-            Iterator<MetricTraceService> userServices = enclave.load(MetricTraceService.class);
+            Iterator<MetricTraceService> userServices = enclave.load(
+                MetricTraceService.class
+            );
             assertNotNull(userServices);
             assertTrue(userServices.hasNext());
             MetricTraceService service = userServices.next();

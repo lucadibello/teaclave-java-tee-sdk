@@ -17,6 +17,9 @@
 
 package org.apache.teaclave.javasdk.test.host;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.concurrent.TimeUnit;
 import org.apache.teaclave.javasdk.host.Enclave;
 import org.apache.teaclave.javasdk.host.EnclaveFactory;
 import org.apache.teaclave.javasdk.host.EnclaveInfo;
@@ -27,25 +30,29 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 @Timeout(
-        value = 300,
-        unit = TimeUnit.SECONDS,
-        threadMode = Timeout.ThreadMode.SEPARATE_THREAD
+    value = 30,
+    unit = TimeUnit.SECONDS,
+    threadMode = Timeout.ThreadMode.SEPARATE_THREAD
 )
 public class TestEnclaveInfo {
 
     @BeforeEach
-    final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
+    final void before() {
+        System.out.println("enter test case: " + this.getClass().getName());
+    }
 
     @AfterEach
-    final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
+    final void after() {
+        System.out.println("exit test case: " + this.getClass().getName());
+    }
 
     @ParameterizedTest
-    @EnumSource(value = EnclaveType.class, mode = EnumSource.Mode.EXCLUDE, names = {"NONE", "EMBEDDED_LIB_OS"})
+    @EnumSource(
+        value = EnclaveType.class,
+        mode = EnumSource.Mode.EXCLUDE,
+        names = { "NONE", "EMBEDDED_LIB_OS" }
+    )
     void testEnclaveInfo(EnclaveType type) throws Exception {
         Enclave enclave = EnclaveFactory.create(type);
         try {
@@ -53,7 +60,10 @@ public class TestEnclaveInfo {
             assertEquals(type, enclaveInfo.getEnclaveType());
             if (type == EnclaveType.TEE_SDK) {
                 assertFalse(enclaveInfo.isEnclaveDebuggable());
-                assertEquals(1500 * 1024 * 1024, enclaveInfo.getEnclaveEPCMemorySizeBytes());
+                assertEquals(
+                    1500 * 1024 * 1024,
+                    enclaveInfo.getEnclaveEPCMemorySizeBytes()
+                );
                 assertEquals(50, enclaveInfo.getEnclaveMaxThreadsNumber());
             } else {
                 assertTrue(enclaveInfo.isEnclaveDebuggable());

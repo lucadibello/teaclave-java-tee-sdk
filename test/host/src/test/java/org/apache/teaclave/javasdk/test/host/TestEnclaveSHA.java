@@ -17,6 +17,13 @@
 
 package org.apache.teaclave.javasdk.test.host;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 import org.apache.teaclave.javasdk.host.Enclave;
 import org.apache.teaclave.javasdk.host.EnclaveFactory;
 import org.apache.teaclave.javasdk.host.EnclaveType;
@@ -27,21 +34,15 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Iterator;
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 @Timeout(
-        value = 300,
-        unit = TimeUnit.SECONDS,
-        threadMode = Timeout.ThreadMode.SEPARATE_THREAD
+    value = 30,
+    unit = TimeUnit.SECONDS,
+    threadMode = Timeout.ThreadMode.SEPARATE_THREAD
 )
 public class TestEnclaveSHA {
-    private String encryptSHA(String plaintext, String SHAType) throws NoSuchAlgorithmException {
+
+    private String encryptSHA(String plaintext, String SHAType)
+        throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance(SHAType);
         byte[] messageDigest = md.digest(plaintext.getBytes());
         BigInteger no = new BigInteger(1, messageDigest);
@@ -53,13 +54,21 @@ public class TestEnclaveSHA {
     }
 
     @BeforeEach
-    final void before() { System.out.println("enter test case: " + this.getClass().getName()); }
+    final void before() {
+        System.out.println("enter test case: " + this.getClass().getName());
+    }
 
     @AfterEach
-    final void after() { System.out.println("exit test case: " + this.getClass().getName()); }
+    final void after() {
+        System.out.println("exit test case: " + this.getClass().getName());
+    }
 
     @ParameterizedTest
-    @EnumSource(value = EnclaveType.class, mode = EnumSource.Mode.EXCLUDE, names = {"NONE", "EMBEDDED_LIB_OS"})
+    @EnumSource(
+        value = EnclaveType.class,
+        mode = EnumSource.Mode.EXCLUDE,
+        names = { "NONE", "EMBEDDED_LIB_OS" }
+    )
     void testEnclaveSHA(EnclaveType type) throws Exception {
         String plaintext = "Hello World!!!";
         Enclave enclave = EnclaveFactory.create(type);
