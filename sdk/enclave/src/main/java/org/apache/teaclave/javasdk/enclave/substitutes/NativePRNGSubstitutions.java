@@ -112,7 +112,7 @@ public final class NativePRNGSubstitutions {
          * a host-shaped function pointer reached via EnclaveEntry.getCallBackMethods().
          * Under concurrent ECALLs that path is hostile to GraalVM's safepoint model:
          * it requires a per-TCS callbacks lookup on every entropy fetch and historically
-         * exposed the calling thread to a safepoint window (see MULTITHREADING.md section 1.2).
+         * exposed the calling thread to a safepoint window.
          * NativeEnclaveRandom.readRand calls sgx_read_rand entirely inside the enclave -
          * no OCALL, no callbacks indirection, no safepoint hazard.
          */
